@@ -114,6 +114,33 @@ def row_to_dict(row):
     return dict(row)
 
 
+def get_connection():
+    from urllib.parse import urlsplit
+
+    database_url = os.getenv("DATABASE_URL", "").strip()
+
+    if not database_url:
+        raise RuntimeError(
+            "DATABASE_URL não está configurada no Render."
+        )
+
+    parsed = urlsplit(database_url)
+
+    print("DIAGNOSTICO DATABASE:", {
+        "username": parsed.username,
+        "host": parsed.hostname,
+        "port": parsed.port,
+        "database": parsed.path.lstrip("/")
+    })
+
+    raw = psycopg2.connect(
+        database_url,
+        cursor_factory=DictCursor,
+        connect_timeout=15
+    )
+
+    return CompatConnection(raw)
+
 def rows_to_dict(rows):
 
     return [
