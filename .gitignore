@@ -1,0 +1,58 @@
+# ============================
+# IGNORAR AMBIENTE PYTHON
+# ============================
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ============================
+# IGNORAR ARQUIVOS SENSÍVEIS
+# ============================
+.env
+*.sql
+*.db
+
+# ============================
+# IGNORAR ARQUIVOS DE UPLOADS
+# (Render NÃO mantém arquivos locais)
+# ============================
+backend/avatars/
+backend/covers/
+backend/music/
+backend/payment_proofs/
+
+# ============================
+# IGNORAR ARQUIVOS DE LOGS
+# ============================
+*.log
+
+# ============================
+# IGNORAR ARQUIVOS TEMPORÁRIOS
+# ============================
+tmp/
+temp/
+*.tmp
+
+# ============================
+# IGNORAR NODE (FRONTEND)
+# ============================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+
+# ============================
+# IGNORAR EDITORES
+# ============================
+.vscode/
+.idea/
+
+# ============================
+# IGNORAR SISTEMA OPERACIONAL
+# ============================
+.DS_Store
+Thumbs.db

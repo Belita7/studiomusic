@@ -1,0 +1,1748 @@
+/* ============================================================
+StudioMusic.AI
+perfil.css
+Estilos da página de perfil do utilizador
+Compatível com perfil.html
+============================================================ */
+
+/* ============================================================
+VARIÁVEIS
+============================================================ */
+
+:root {
+--profile-bg: #090b10;
+--profile-card: #12161e;
+--profile-card-hover: #171c26;
+--profile-border: #252b36;
+
+--profile-text: #ffffff;
+--profile-text-secondary: #a5adbd;
+--profile-text-muted: #747e91;
+
+--profile-primary: #ff6b00;
+--profile-primary-hover: #ff8126;
+--profile-primary-soft: rgba(255, 107, 0, 0.12);
+
+--profile-success: #22c55e;
+--profile-danger: #ef4444;
+--profile-warning: #f59e0b;
+--profile-blue: #3b82f6;
+
+--profile-radius: 14px;
+--profile-radius-small: 9px;
+
+--profile-transition: 0.2s ease;
+
+}
+
+/* ============================================================
+RESET E BASE
+============================================================ */
+
+.profile-page {
+min-height: 100vh;
+background: var(--profile-bg);
+color: var(--profile-text);
+}
+
+.profile-page *,
+.profile-page *::before,
+.profile-page *::after {
+box-sizing: border-box;
+}
+
+.profile-page button,
+.profile-page input,
+.profile-page textarea,
+.profile-page select {
+font: inherit;
+}
+
+.profile-page button {
+cursor: pointer;
+}
+
+.profile-page button:disabled {
+cursor: not-allowed;
+opacity: 0.6;
+}
+
+.profile-page a {
+color: inherit;
+text-decoration: none;
+}
+
+.profile-page .material-icons {
+vertical-align: middle;
+user-select: none;
+}
+
+.profile-page [hidden] {
+display: none !important;
+}
+
+/* ============================================================
+ÁREA PRINCIPAL
+============================================================ */
+
+.profile-page .main-content {
+min-width: 0;
+}
+
+.profile-container {
+width: 100%;
+max-width: 1440px;
+margin: 0 auto;
+padding: 30px 32px 24px;
+}
+
+/* ============================================================
+TOPBAR
+============================================================ */
+
+.profile-page .topbar {
+min-height: 70px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 20px;
+padding: 12px 32px;
+border-bottom: 1px solid var(--profile-border);
+background: rgba(9, 11, 16, 0.96);
+}
+
+.profile-page .topbar-left,
+.profile-page .topbar-right {
+display: flex;
+align-items: center;
+gap: 18px;
+min-width: 0;
+}
+
+.profile-page .breadcrumb {
+display: flex;
+align-items: center;
+flex-wrap: wrap;
+gap: 7px;
+color: var(--profile-text-secondary);
+font-size: 13px;
+}
+
+.profile-page .breadcrumb .material-icons {
+font-size: 18px;
+color: var(--profile-text-muted);
+}
+
+.profile-page .breadcrumb strong {
+color: var(--profile-text);
+font-weight: 600;
+}
+
+.profile-page .menu-toggle,
+.profile-page .sidebar-close {
+display: none;
+align-items: center;
+justify-content: center;
+width: 40px;
+height: 40px;
+padding: 0;
+border: 1px solid var(--profile-border);
+border-radius: 9px;
+background: var(--profile-card);
+color: var(--profile-text);
+}
+
+.profile-page .menu-toggle:hover,
+.profile-page .sidebar-close:hover {
+background: var(--profile-card-hover);
+}
+
+/* ============================================================
+ESTADO DA API
+============================================================ */
+
+.profile-page .api-status {
+display: flex;
+align-items: center;
+gap: 8px;
+color: var(--profile-text-secondary);
+font-size: 12px;
+white-space: nowrap;
+}
+
+.profile-page .status-dot {
+width: 8px;
+height: 8px;
+flex-shrink: 0;
+border-radius: 50%;
+background: var(--profile-warning);
+box-shadow: 0 0 9px rgba(245, 158, 11, 0.25);
+}
+
+.profile-page .status-dot.online,
+.profile-page .status-dot.connected {
+background: var(--profile-success);
+box-shadow: 0 0 9px rgba(34, 197, 94, 0.3);
+}
+
+.profile-page .status-dot.offline,
+.profile-page .status-dot.disconnected {
+background: var(--profile-danger);
+box-shadow: 0 0 9px rgba(239, 68, 68, 0.25);
+}
+
+/* ============================================================
+MENU DO UTILIZADOR
+============================================================ */
+
+.profile-page .user-menu-container {
+position: relative;
+}
+
+.profile-page .user-menu-button {
+display: flex;
+align-items: center;
+gap: 9px;
+max-width: 240px;
+min-height: 42px;
+padding: 7px 10px;
+border: 1px solid var(--profile-border);
+border-radius: 10px;
+background: var(--profile-card);
+color: var(--profile-text);
+transition: background var(--profile-transition);
+}
+
+.profile-page .user-menu-button:hover {
+background: var(--profile-card-hover);
+}
+
+.profile-page .user-menu-button > .material-icons:first-child {
+font-size: 23px;
+color: var(--profile-primary);
+}
+
+.profile-page #topbarUserName {
+overflow: hidden;
+max-width: 130px;
+text-overflow: ellipsis;
+white-space: nowrap;
+font-size: 13px;
+}
+
+.profile-page .user-menu-button > .material-icons:last-child {
+font-size: 19px;
+color: var(--profile-text-secondary);
+}
+
+.profile-page .user-dropdown {
+position: absolute;
+z-index: 1000;
+top: calc(100% + 9px);
+right: 0;
+display: none;
+width: 225px;
+padding: 7px;
+border: 1px solid var(--profile-border);
+border-radius: 12px;
+background: #151922;
+box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+}
+
+.profile-page .user-dropdown.show,
+.profile-page .user-dropdown.open,
+.profile-page .user-dropdown.active {
+display: block;
+}
+
+.profile-page .dropdown-item {
+display: flex;
+align-items: center;
+gap: 11px;
+width: 100%;
+padding: 11px 12px;
+border: 0;
+border-radius: 8px;
+background: transparent;
+color: var(--profile-text-secondary);
+text-align: left;
+font-size: 13px;
+transition: background var(--profile-transition),
+color var(--profile-transition);
+}
+
+.profile-page .dropdown-item:hover {
+background: var(--profile-primary-soft);
+color: var(--profile-text);
+}
+
+.profile-page .dropdown-item .material-icons {
+font-size: 19px;
+}
+
+.profile-page .logout-item {
+color: #ff8a8a;
+}
+
+/* ============================================================
+TÍTULO DA PÁGINA
+============================================================ */
+
+.profile-page .page-heading {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 20px;
+margin-bottom: 26px;
+}
+
+.profile-page .page-heading h1 {
+margin: 0 0 8px;
+color: var(--profile-text);
+font-size: clamp(25px, 3vw, 32px);
+font-weight: 700;
+letter-spacing: -0.7px;
+}
+
+.profile-page .page-heading p {
+margin: 0;
+color: var(--profile-text-secondary);
+font-size: 14px;
+line-height: 1.7;
+}
+
+/* ============================================================
+CARTÃO PRINCIPAL DO PERFIL
+============================================================ */
+
+.profile-page .profile-hero-card {
+display: flex;
+align-items: center;
+gap: 22px;
+padding: 25px;
+margin-bottom: 24px;
+border: 1px solid var(--profile-border);
+border-radius: var(--profile-radius);
+background:
+radial-gradient(
+circle at top right,
+rgba(255, 107, 0, 0.09),
+transparent 45%
+),
+var(--profile-card);
+}
+
+.profile-page .profile-avatar-wrapper {
+position: relative;
+flex-shrink: 0;
+}
+
+.profile-page .profile-avatar {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 94px;
+height: 94px;
+overflow: hidden;
+border: 3px solid rgba(255, 107, 0, 0.4);
+border-radius: 50%;
+background: #202632;
+color: var(--profile-primary);
+}
+
+.profile-page .profile-avatar .material-icons {
+font-size: 67px;
+}
+
+.profile-page .profile-avatar img {
+display: block;
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.profile-page .avatar-edit-button {
+position: absolute;
+right: -2px;
+bottom: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+width: 32px;
+height: 32px;
+border: 2px solid var(--profile-card);
+border-radius: 50%;
+background: var(--profile-primary);
+color: #ffffff;
+transition: background var(--profile-transition);
+}
+
+.profile-page .avatar-edit-button:hover {
+background: var(--profile-primary-hover);
+}
+
+.profile-page .avatar-edit-button .material-icons {
+font-size: 17px;
+}
+
+.profile-page .profile-hero-info {
+flex: 1;
+min-width: 0;
+}
+
+.profile-page .profile-hero-info h2 {
+overflow-wrap: anywhere;
+margin: 0 0 7px;
+font-size: 23px;
+font-weight: 700;
+}
+
+.profile-page .profile-hero-info > p {
+overflow-wrap: anywhere;
+margin: 0 0 12px;
+color: var(--profile-text-secondary);
+font-size: 13px;
+}
+
+.profile-page .profile-badges {
+display: flex;
+align-items: center;
+flex-wrap: wrap;
+gap: 8px;
+}
+
+.profile-page .profile-role-badge {
+display: inline-flex;
+align-items: center;
+min-height: 25px;
+padding: 4px 10px;
+border: 1px solid rgba(255, 107, 0, 0.25);
+border-radius: 20px;
+background: var(--profile-primary-soft);
+color: #ff9b55;
+font-size: 11px;
+font-weight: 600;
+}
+
+.profile-page .profile-hero-action {
+flex-shrink: 0;
+}
+
+/* ============================================================
+BOTÕES
+============================================================ */
+
+.profile-page .btn {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+min-height: 42px;
+padding: 10px 16px;
+border: 1px solid transparent;
+border-radius: var(--profile-radius-small);
+font-size: 13px;
+font-weight: 600;
+line-height: 1.4;
+text-align: center;
+transition:
+background var(--profile-transition),
+border-color var(--profile-transition),
+color var(--profile-transition),
+transform var(--profile-transition);
+}
+
+.profile-page .btn:active {
+transform: scale(0.98);
+}
+
+.profile-page .btn .material-icons {
+font-size: 18px;
+}
+
+.profile-page .btn-primary {
+border-color: var(--profile-primary);
+background: var(--profile-primary);
+color: #ffffff;
+}
+
+.profile-page .btn-primary:hover {
+border-color: var(--profile-primary-hover);
+background: var(--profile-primary-hover);
+}
+
+.profile-page .btn-outline {
+border-color: var(--profile-border);
+background: transparent;
+color: var(--profile-text);
+}
+
+.profile-page .btn-outline:hover {
+border-color: var(--profile-primary);
+background: var(--profile-primary-soft);
+color: #ff9b55;
+}
+
+.profile-page .btn-danger-outline {
+border-color: rgba(239, 68, 68, 0.35);
+background: transparent;
+color: #ff8585;
+}
+
+.profile-page .btn-danger-outline:hover {
+border-color: var(--profile-danger);
+background: rgba(239, 68, 68, 0.1);
+}
+
+/* ============================================================
+ESTATÍSTICAS
+============================================================ */
+
+.profile-page .profile-stats-grid {
+display: grid;
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 18px;
+margin-bottom: 35px;
+}
+
+.profile-page .profile-stat-card {
+display: flex;
+align-items: center;
+gap: 15px;
+min-width: 0;
+padding: 21px;
+border: 1px solid var(--profile-border);
+border-radius: var(--profile-radius);
+background: var(--profile-card);
+transition:
+border-color var(--profile-transition),
+transform var(--profile-transition);
+}
+
+.profile-page .profile-stat-card:hover {
+transform: translateY(-2px);
+border-color: rgba(255, 107, 0, 0.35);
+}
+
+.profile-page .profile-stat-icon {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 48px;
+height: 48px;
+flex-shrink: 0;
+border-radius: 12px;
+background: var(--profile-primary-soft);
+color: var(--profile-primary);
+}
+
+.profile-page .profile-stat-icon .material-icons {
+font-size: 25px;
+}
+
+.profile-page .profile-stat-info {
+display: flex;
+flex-direction: column;
+gap: 6px;
+min-width: 0;
+}
+
+.profile-page .profile-stat-info > span {
+color: var(--profile-text-secondary);
+font-size: 12px;
+line-height: 1.5;
+}
+
+.profile-page .profile-stat-info strong {
+overflow-wrap: anywhere;
+color: var(--profile-text);
+font-size: 25px;
+font-weight: 700;
+}
+
+/* ============================================================
+SECÇÕES
+============================================================ */
+
+.profile-page .profile-section {
+padding: 25px;
+margin-bottom: 25px;
+border: 1px solid var(--profile-border);
+border-radius: var(--profile-radius);
+background: var(--profile-card);
+scroll-margin-top: 25px;
+}
+
+.profile-page .section-heading {
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+gap: 16px;
+margin-bottom: 24px;
+}
+
+.profile-page .section-heading h2 {
+margin: 0 0 7px;
+color: var(--profile-text);
+font-size: 19px;
+font-weight: 700;
+}
+
+.profile-page .section-heading p {
+margin: 0;
+color: var(--profile-text-secondary);
+font-size: 13px;
+line-height: 1.7;
+}
+
+.profile-page .section-heading-icon {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 42px;
+height: 42px;
+flex-shrink: 0;
+border-radius: 11px;
+background: var(--profile-primary-soft);
+color: var(--profile-primary);
+font-size: 23px;
+}
+
+/* ============================================================
+ASSINATURA
+============================================================ */
+
+.profile-page .subscription-card {
+padding: 22px;
+border: 1px solid var(--profile-border);
+border-radius: 12px;
+background: rgba(9, 11, 16, 0.42);
+}
+
+.profile-page .subscription-top {
+display: flex;
+align-items: center;
+gap: 16px;
+padding-bottom: 22px;
+border-bottom: 1px solid var(--profile-border);
+}
+
+.profile-page .subscription-plan-icon {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 58px;
+height: 58px;
+flex-shrink: 0;
+border-radius: 14px;
+background: var(--profile-primary-soft);
+color: var(--profile-primary);
+}
+
+.profile-page .subscription-plan-icon .material-icons {
+font-size: 31px;
+}
+
+.profile-page .subscription-plan-info {
+flex: 1;
+min-width: 0;
+}
+
+.profile-page .subscription-label {
+display: block;
+margin-bottom: 6px;
+color: var(--profile-text-muted);
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 1.2px;
+}
+
+.profile-page .subscription-plan-info h3 {
+overflow-wrap: anywhere;
+margin: 0 0 5px;
+font-size: 20px;
+font-weight: 700;
+}
+
+.profile-page .subscription-plan-info p {
+margin: 0;
+color: var(--profile-text-secondary);
+font-size: 12px;
+line-height: 1.6;
+}
+
+.profile-page .subscription-status {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
+min-height: 28px;
+padding: 5px 10px;
+border: 1px solid var(--profile-border);
+border-radius: 20px;
+background: #1c222d;
+color: var(--profile-text-secondary);
+font-size: 11px;
+font-weight: 600;
+text-align: center;
+}
+
+.profile-page .subscription-status.active,
+.profile-page .subscription-status.ativo {
+border-color: rgba(34, 197, 94, 0.25);
+background: rgba(34, 197, 94, 0.1);
+color: #4ade80;
+}
+
+.profile-page .subscription-status.expired,
+.profile-page .subscription-status.expirado {
+border-color: rgba(239, 68, 68, 0.25);
+background: rgba(239, 68, 68, 0.1);
+color: #f87171;
+}
+
+.profile-page .subscription-status.pending,
+.profile-page .subscription-status.pendente {
+border-color: rgba(245, 158, 11, 0.25);
+background: rgba(245, 158, 11, 0.1);
+color: #fbbf24;
+}
+
+/* Detalhes do plano */
+
+.profile-page .subscription-details {
+display: grid;
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 20px;
+padding: 23px 0;
+border-bottom: 1px solid var(--profile-border);
+}
+
+.profile-page .subscription-detail {
+display: flex;
+align-items: flex-start;
+gap: 11px;
+min-width: 0;
+}
+
+.profile-page .subscription-detail > .material-icons {
+margin-top: 2px;
+color: var(--profile-primary);
+font-size: 21px;
+}
+
+.profile-page .subscription-detail > div {
+display: flex;
+flex-direction: column;
+gap: 6px;
+min-width: 0;
+}
+
+.profile-page .subscription-detail small {
+color: var(--profile-text-secondary);
+font-size: 11px;
+line-height: 1.5;
+}
+
+.profile-page .subscription-detail strong {
+overflow-wrap: anywhere;
+color: var(--profile-text);
+font-size: 13px;
+font-weight: 600;
+}
+
+/* Progresso */
+
+.profile-page .subscription-progress {
+padding: 22px 0 15px;
+}
+
+.profile-page .subscription-progress-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 15px;
+margin-bottom: 12px;
+}
+
+.profile-page .subscription-progress-header span {
+color: var(--profile-text-secondary);
+font-size: 12px;
+}
+
+.profile-page .subscription-progress-header strong {
+color: var(--profile-text);
+font-size: 12px;
+text-align: right;
+}
+
+.profile-page .subscription-progress-track {
+width: 100%;
+height: 8px;
+overflow: hidden;
+border-radius: 20px;
+background: #252b36;
+}
+
+.profile-page .subscription-progress-bar {
+width: 0;
+height: 100%;
+border-radius: inherit;
+background: linear-gradient(90deg, #ff6b00, #ff9b42);
+transition: width 0.4s ease;
+}
+
+/* Aviso da assinatura */
+
+.profile-page .subscription-notice {
+padding: 13px 15px;
+margin-top: 7px;
+border: 1px solid rgba(59, 130, 246, 0.2);
+border-radius: 9px;
+background: rgba(59, 130, 246, 0.07);
+color: var(--profile-text-secondary);
+font-size: 12px;
+line-height: 1.7;
+}
+
+.profile-page .subscription-actions {
+display: flex;
+justify-content: flex-end;
+margin-top: 20px;
+}
+
+/* ============================================================
+COMUNIDADE
+============================================================ */
+
+.profile-page .community-summary {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 16px;
+margin-bottom: 22px;
+}
+
+.profile-page .community-summary-card {
+display: flex;
+align-items: center;
+gap: 13px;
+padding: 18px;
+border: 1px solid var(--profile-border);
+border-radius: 11px;
+background: rgba(9, 11, 16, 0.42);
+}
+
+.profile-page .community-summary-card > .material-icons {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 43px;
+height: 43px;
+flex-shrink: 0;
+border-radius: 11px;
+background: var(--profile-primary-soft);
+color: var(--profile-primary);
+font-size: 23px;
+}
+
+.profile-page .community-summary-card > div {
+display: flex;
+flex-direction: column;
+gap: 5px;
+}
+
+.profile-page .community-summary-card small {
+color: var(--profile-text-secondary);
+font-size: 12px;
+}
+
+.profile-page .community-summary-card strong {
+color: var(--profile-text);
+font-size: 23px;
+}
+
+.profile-page .community-publications {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 16px;
+}
+
+.profile-page .community-empty {
+display: flex;
+grid-column: 1 / -1;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+min-height: 245px;
+padding: 30px 20px;
+border: 1px dashed #343c4b;
+border-radius: 12px;
+background: rgba(9, 11, 16, 0.3);
+text-align: center;
+}
+
+.profile-page .community-empty > .material-icons {
+margin-bottom: 13px;
+color: var(--profile-primary);
+font-size: 43px;
+}
+
+.profile-page .community-empty h3 {
+margin: 0 0 9px;
+font-size: 17px;
+}
+
+.profile-page .community-empty p {
+max-width: 430px;
+margin: 0 0 19px;
+color: var(--profile-text-secondary);
+font-size: 12px;
+line-height: 1.8;
+}
+
+.profile-page .community-actions {
+display: flex;
+justify-content: flex-end;
+margin-top: 20px;
+}
+
+/* Cartões de publicações que poderão ser criados pelo JavaScript */
+
+.profile-page .community-publication-card {
+min-width: 0;
+padding: 17px;
+border: 1px solid var(--profile-border);
+border-radius: 12px;
+background: rgba(9, 11, 16, 0.42);
+transition: border-color var(--profile-transition);
+}
+
+.profile-page .community-publication-card:hover {
+border-color: rgba(255, 107, 0, 0.4);
+}
+
+.profile-page .community-publication-card h3 {
+overflow-wrap: anywhere;
+margin: 0 0 9px;
+font-size: 15px;
+}
+
+.profile-page .community-publication-card p {
+color: var(--profile-text-secondary);
+font-size: 12px;
+line-height: 1.7;
+}
+
+.profile-page .community-publication-meta {
+display: flex;
+flex-wrap: wrap;
+gap: 14px;
+margin-top: 13px;
+color: var(--profile-text-muted);
+font-size: 11px;
+}
+
+.profile-page .community-publication-meta span {
+display: inline-flex;
+align-items: center;
+gap: 5px;
+}
+
+.profile-page .community-publication-meta .material-icons {
+font-size: 16px;
+}
+
+/* ============================================================
+FORMULÁRIO DE DADOS PESSOAIS
+============================================================ */
+
+.profile-page .profile-form-grid {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 22px 20px;
+}
+
+.profile-page .form-group {
+display: flex;
+flex-direction: column;
+min-width: 0;
+gap: 9px;
+}
+
+.profile-page .form-group-full {
+grid-column: 1 / -1;
+}
+
+.profile-page .form-group label {
+color: var(--profile-text);
+font-size: 12px;
+font-weight: 600;
+}
+
+.profile-page .form-group input,
+.profile-page .form-group textarea,
+.profile-page .form-group select {
+display: block;
+width: 100%;
+min-width: 0;
+padding: 12px 14px;
+border: 1px solid var(--profile-border);
+border-radius: 9px;
+outline: none;
+background: #0c0f15;
+color: var(--profile-text);
+font-size: 13px;
+line-height: 1.6;
+transition:
+border-color var(--profile-transition),
+box-shadow var(--profile-transition);
+}
+
+.profile-page .form-group input {
+min-height: 45px;
+}
+
+.profile-page .form-group textarea {
+min-height: 115px;
+resize: vertical;
+}
+
+.profile-page .form-group input::placeholder,
+.profile-page .form-group textarea::placeholder {
+color: #606b7d;
+}
+
+.profile-page .form-group input:focus,
+.profile-page .form-group textarea:focus,
+.profile-page .form-group select:focus {
+border-color: var(--profile-primary);
+box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+}
+
+.profile-page .form-group input:disabled,
+.profile-page .form-group textarea:disabled,
+.profile-page .form-group select:disabled {
+cursor: default;
+opacity: 0.82;
+background: #11151d;
+}
+
+.profile-page .form-group small {
+color: var(--profile-text-muted);
+font-size: 11px;
+line-height: 1.6;
+}
+
+.profile-page .profile-form-actions {
+display: flex;
+justify-content: flex-end;
+flex-wrap: wrap;
+gap: 10px;
+margin-top: 23px;
+}
+
+.profile-page .profile-form-message {
+margin-top: 14px;
+color: var(--profile-text-secondary);
+font-size: 12px;
+line-height: 1.7;
+}
+
+.profile-page .profile-form-message.success {
+color: #4ade80;
+}
+
+.profile-page .profile-form-message.error {
+color: #f87171;
+}
+
+/* ============================================================
+SEGURANÇA
+============================================================ */
+
+.profile-page .security-option {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 20px;
+padding: 19px 0;
+border-bottom: 1px solid var(--profile-border);
+}
+
+.profile-page .security-option:first-of-type {
+padding-top: 0;
+}
+
+.profile-page .security-option:last-child {
+padding-bottom: 0;
+border-bottom: 0;
+}
+
+.profile-page .security-option-info {
+display: flex;
+align-items: center;
+gap: 14px;
+min-width: 0;
+}
+
+.profile-page .security-option-icon {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 45px;
+height: 45px;
+flex-shrink: 0;
+border-radius: 11px;
+background: #1c222d;
+color: var(--profile-primary);
+}
+
+.profile-page .security-option-icon .material-icons {
+font-size: 23px;
+}
+
+.profile-page .security-option-info h3 {
+margin: 0 0 6px;
+font-size: 14px;
+font-weight: 600;
+}
+
+.profile-page .security-option-info p {
+margin: 0;
+color: var(--profile-text-secondary);
+font-size: 12px;
+line-height: 1.7;
+}
+
+/* ============================================================
+RODAPÉ
+============================================================ */
+
+.profile-page .profile-footer {
+padding: 15px 0 5px;
+text-align: center;
+}
+
+.profile-page .profile-footer p {
+margin: 0;
+color: var(--profile-text-muted);
+font-size: 11px;
+line-height: 1.8;
+}
+
+/* ============================================================
+SIDEBAR OVERLAY
+============================================================ */
+
+.profile-page .sidebar-overlay {
+display: none;
+}
+
+/* ============================================================
+ANIMAÇÕES E ACESSIBILIDADE
+============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+.profile-page *,
+.profile-page *::before,
+.profile-page *::after {
+scroll-behavior: auto !important;
+animation-duration: 0.01ms !important;
+animation-iteration-count: 1 !important;
+transition-duration: 0.01ms !important;
+}
+}
+
+/* ============================================================
+ECRÃS MÉDIOS
+============================================================ */
+
+@media (max-width: 1100px) {
+
+.profile-container {
+    padding: 25px 22px;
+}
+
+.profile-page .topbar {
+    padding-right: 22px;
+    padding-left: 22px;
+}
+
+.profile-page .profile-stat-card {
+    padding: 17px;
+    gap: 12px;
+}
+
+.profile-page .profile-stat-icon {
+    width: 42px;
+    height: 42px;
+}
+
+.profile-page .profile-stat-info > span {
+    font-size: 11px;
+}
+
+.profile-page .subscription-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+}
+
+/* ============================================================
+TABLETS E TELEMÓVEIS
+============================================================ */
+
+@media (max-width: 768px) {
+
+.profile-container {
+    padding: 23px 16px;
+}
+
+.profile-page .topbar {
+    min-height: 62px;
+    padding: 10px 16px;
+}
+
+.profile-page .topbar-left,
+.profile-page .topbar-right {
+    gap: 10px;
+}
+
+.profile-page .menu-toggle {
+    display: inline-flex;
+}
+
+.profile-page .sidebar-close {
+    display: inline-flex;
+}
+
+.profile-page .api-status {
+    gap: 6px;
+    font-size: 0;
+}
+
+.profile-page .status-dot {
+    width: 9px;
+    height: 9px;
+}
+
+.profile-page .user-menu-button {
+    gap: 6px;
+    min-height: 39px;
+    padding: 6px 8px;
+}
+
+.profile-page #topbarUserName {
+    max-width: 85px;
+    font-size: 12px;
+}
+
+.profile-page .breadcrumb {
+    gap: 4px;
+    font-size: 12px;
+}
+
+.profile-page .page-heading {
+    margin-bottom: 21px;
+}
+
+.profile-page .page-heading h1 {
+    font-size: 26px;
+}
+
+.profile-page .page-heading p {
+    font-size: 13px;
+}
+
+.profile-page .profile-hero-card {
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 20px;
+}
+
+.profile-page .profile-avatar {
+    width: 76px;
+    height: 76px;
+}
+
+.profile-page .profile-avatar .material-icons {
+    font-size: 55px;
+}
+
+.profile-page .profile-hero-info {
+    flex: 1 1 calc(100% - 100px);
+}
+
+.profile-page .profile-hero-info h2 {
+    font-size: 20px;
+}
+
+.profile-page .profile-hero-action {
+    width: 100%;
+}
+
+.profile-page .profile-hero-action .btn {
+    width: 100%;
+}
+
+.profile-page .profile-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.profile-page .profile-stat-card {
+    padding: 16px;
+}
+
+.profile-page .profile-stat-info strong {
+    font-size: 22px;
+}
+
+.profile-page .profile-section {
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.profile-page .section-heading {
+    margin-bottom: 20px;
+}
+
+.profile-page .section-heading h2 {
+    font-size: 18px;
+}
+
+.profile-page .subscription-card {
+    padding: 17px;
+}
+
+.profile-page .subscription-top {
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.profile-page .subscription-plan-info {
+    flex: 1 1 calc(100% - 75px);
+}
+
+.profile-page .subscription-status {
+    margin-left: 70px;
+}
+
+.profile-page .subscription-details {
+    gap: 18px 12px;
+}
+
+.profile-page .community-publications {
+    grid-template-columns: 1fr;
+}
+
+.profile-page .profile-form-grid {
+    grid-template-columns: 1fr;
+    gap: 19px;
+}
+
+.profile-page .form-group-full {
+    grid-column: auto;
+}
+
+.profile-page .security-option {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.profile-page .security-option > .btn {
+    width: 100%;
+}
+
+}
+
+/* ============================================================
+TELEMÓVEIS PEQUENOS
+============================================================ */
+
+@media (max-width: 480px) {
+
+.profile-container {
+    padding: 20px 12px;
+}
+
+.profile-page .topbar {
+    padding: 9px 12px;
+}
+
+.profile-page .topbar-left,
+.profile-page .topbar-right {
+    gap: 7px;
+}
+
+.profile-page .breadcrumb {
+    font-size: 11px;
+}
+
+.profile-page .breadcrumb .material-icons {
+    font-size: 15px;
+}
+
+.profile-page #topbarUserName {
+    display: none;
+}
+
+.profile-page .user-menu-button > .material-icons:first-child {
+    font-size: 22px;
+}
+
+.profile-page .user-menu-button {
+    gap: 4px;
+}
+
+.profile-page .page-heading h1 {
+    font-size: 23px;
+}
+
+.profile-page .page-heading p {
+    font-size: 12px;
+}
+
+.profile-page .profile-hero-card {
+    padding: 16px;
+    gap: 13px;
+}
+
+.profile-page .profile-avatar {
+    width: 65px;
+    height: 65px;
+}
+
+.profile-page .profile-avatar .material-icons {
+    font-size: 47px;
+}
+
+.profile-page .avatar-edit-button {
+    width: 27px;
+    height: 27px;
+}
+
+.profile-page .avatar-edit-button .material-icons {
+    font-size: 15px;
+}
+
+.profile-page .profile-hero-info h2 {
+    font-size: 17px;
+}
+
+.profile-page .profile-hero-info > p {
+    font-size: 12px;
+}
+
+.profile-page .profile-section {
+    padding: 16px;
+}
+
+.profile-page .section-heading {
+    gap: 10px;
+}
+
+.profile-page .section-heading h2 {
+    font-size: 16px;
+}
+
+.profile-page .section-heading p {
+    font-size: 12px;
+}
+
+.profile-page .section-heading-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+}
+
+.profile-page .subscription-card {
+    padding: 13px;
+}
+
+.profile-page .subscription-plan-icon {
+    width: 48px;
+    height: 48px;
+}
+
+.profile-page .subscription-plan-icon .material-icons {
+    font-size: 26px;
+}
+
+.profile-page .subscription-plan-info h3 {
+    font-size: 17px;
+}
+
+.profile-page .subscription-plan-info p {
+    font-size: 11px;
+}
+
+.profile-page .subscription-status {
+    margin-left: 0;
+}
+
+.profile-page .subscription-details {
+    grid-template-columns: 1fr;
+    gap: 17px;
+}
+
+.profile-page .subscription-progress-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.profile-page .subscription-progress-header strong {
+    text-align: left;
+}
+
+.profile-page .subscription-actions,
+.profile-page .community-actions {
+    justify-content: stretch;
+}
+
+.profile-page .subscription-actions .btn,
+.profile-page .community-actions .btn {
+    width: 100%;
+}
+
+.profile-page .community-summary {
+    grid-template-columns: 1fr;
+    gap: 11px;
+}
+
+.profile-page .community-summary-card {
+    padding: 14px;
+}
+
+.profile-page .community-empty {
+    min-height: 220px;
+    padding: 23px 14px;
+}
+
+.profile-page .profile-form-actions {
+    flex-direction: column-reverse;
+}
+
+.profile-page .profile-form-actions .btn {
+    width: 100%;
+}
+
+.profile-page .security-option-info {
+    align-items: flex-start;
+}
+
+.profile-page .security-option-info p {
+    font-size: 11px;
+}
+
+.profile-page .profile-footer p {
+    font-size: 10px;
+}
+
+}
+/* ============================================================
+   STUDIOMUSIC.AI
+   PERFIL — PUBLICAÇÕES DA COMUNIDADE
+   ============================================================ */
+
+.community-publications {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(min(100%, 280px), 1fr)
+    );
+    gap: 20px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Cartão */
+
+.community-publication-card {
+    background: #191919;
+    border: 1px solid #303030;
+    border-radius: 16px;
+    overflow: hidden;
+    min-width: 0;
+    transition: border-color .2s ease,
+                transform .2s ease,
+                box-shadow .2s ease;
+}
+
+.community-publication-card:hover {
+    border-color: #ff6b00;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .25);
+}
+
+/* Capa */
+
+.community-publication-cover {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(
+        135deg,
+        #282828,
+        #101010
+    );
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.community-publication-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.community-publication-cover .material-icons {
+    font-size: 64px;
+    color: #ff6b00;
+}
+
+/* Conteúdo */
+
+.community-publication-body {
+    padding: 18px;
+}
+
+.community-publication-card h3 {
+    margin: 0 0 10px;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #fff;
+    overflow-wrap: anywhere;
+}
+
+.community-publication-description {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #aaa;
+    margin: 0 0 15px;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+/* Estatísticas */
+
+.community-publication-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 15px;
+    color: #aaa;
+    font-size: 12px;
+}
+
+.community-publication-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.community-publication-meta .material-icons {
+    font-size: 17px;
+    color: #ff6b00;
+}
+
+/* Reprodutor */
+
+.community-publication-player {
+    width: 100%;
+    height: 40px;
+    margin: 8px 0 15px;
+}
+
+/* Botões */
+
+.community-publication-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.community-publication-button {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 12px;
+    border-radius: 9px;
+    border: 1px solid #444;
+    background: #262626;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    transition: background .2s ease;
+}
+
+.community-publication-button:hover {
+    background: #363636;
+}
+
+.community-publication-button .material-icons {
+    font-size: 18px;
+}
+
+.community-publication-button.danger {
+    border-color: #7f3030;
+    color: #ff8a8a;
+}
+
+.community-publication-button.danger:hover {
+    background: #522020;
+}
+
+.community-publication-button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+/* Estado vazio */
+
+#communityEmptyState {
+    grid-column: 1 / -1;
+}
+
+/* Responsividade */
+
+@media (max-width: 600px) {
+    .community-publications {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .community-publication-body {
+        padding: 15px;
+    }
+
+    .community-publication-actions {
+        flex-direction: column;
+    }
+
+    .community-publication-button {
+        width: 100%;
+    }
+}
+
+
+/* ============================================================
+FIM DO PERFIL.CSS
+============================================================ */

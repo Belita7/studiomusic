@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111111">
+
+    <title>StudioMusic.AI | Administração</title>
+
+    <!-- Fonte -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Material Icons -->
+    <link
+        href="https://fonts.googleapis.com/icon?family=Material+Icons+Round"
+        rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+
+<div class="app-shell" id="appShell">
+
+    <!-- FUNDO PARA FECHAR O MENU NO TELEMÓVEL -->
+    <div
+        class="menu-overlay"
+        id="menuOverlay"
+        aria-hidden="true">
+    </div>
+
+    <!-- =====================================================
+         MENU LATERAL
+    ====================================================== -->
+
+    <aside
+        class="sidebar"
+        id="sidebar"
+        aria-label="Menu administrativo">
+
+        <!-- LOGÓTIPO -->
+        <a href="index.html" class="brand">
+
+            <span class="brand-mark">
+                <span class="material-icons-round">graphic_eq</span>
+            </span>
+
+            <span class="brand-copy">
+                StudioMusic<span>.AI</span>
+                <small>ADMINISTRAÇÃO</small>
+            </span>
+
+        </a>
+
+        <div class="nav-label">MENU PRINCIPAL</div>
+
+        <!-- NAVEGAÇÃO -->
+        <nav class="side-nav" aria-label="Navegação administrativa">
+
+            <button
+                type="button"
+                class="nav-item active"
+                data-view="overview">
+
+                <span class="material-icons-round">dashboard</span>
+                <span>Painel geral</span>
+
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                data-view="users">
+
+                <span class="material-icons-round">group</span>
+                <span>Utilizadores</span>
+                <span class="nav-count" id="usersNavCount">0</span>
+
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                data-view="music">
+
+                <span class="material-icons-round">library_music</span>
+                <span>Painel de músicas</span>
+
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                data-view="payments">
+
+                <span class="material-icons-round">payments</span>
+                <span>Pagamentos</span>
+                <span class="nav-dot"></span>
+
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                data-view="community">
+
+                <span class="material-icons-round">public</span>
+                <span>Comunidade</span>
+
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                data-view="statistics">
+
+                <span class="material-icons-round">bar_chart</span>
+                <span>Estatísticas</span>
+
+            </button>
+
+        </nav>
+
+        <!-- RODAPÉ DO MENU -->
+        <div class="sidebar-bottom">
+
+            <div class="admin-mini">
+
+                <div class="avatar" id="sidebarAvatar">AD</div>
+
+                <div class="admin-mini-info">
+                    <strong id="sidebarName">Administrador</strong>
+                    <span>Administrador</span>
+                </div>
+
+                <span class="material-icons-round verified">
+                    verified
+                </span>
+
+            </div>
+
+            <a href="index.html" class="bottom-link">
+
+                <span class="material-icons-round">home</span>
+                <span>Voltar à aplicação</span>
+
+            </a>
+
+            <button
+                type="button"
+                class="bottom-link logout-btn"
+                id="logoutBtn">
+
+                <span class="material-icons-round">logout</span>
+                <span>Terminar sessão</span>
+
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         ÁREA PRINCIPAL
+    ====================================================== -->
+
+    <main class="main-area">
+
+        <!-- CABEÇALHO -->
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <!-- BOTÃO HAMBÚRGUER -->
+                <button
+                    type="button"
+                    class="icon-btn menu-toggle"
+                    id="menuToggle"
+                    aria-label="Abrir menu"
+                    aria-controls="sidebar"
+                    aria-expanded="false"
+                    title="Abrir ou fechar o menu">
+
+                    <span
+                        class="material-icons-round"
+                        id="menuIcon">menu</span>
+
+                </button>
+
+                <div class="page-heading">
+
+                    <div class="eyebrow">
+                        STUDIOMUSIC.AI / ADMIN
+                    </div>
+
+                    <h1 id="pageTitle">Painel geral</h1>
+
+                </div>
+
+            </div>
+
+            <div class="topbar-right">
+
+                <div class="system-status">
+                    <span></span>
+                    <span id="connectionText">A verificar ligação...</span>
+                </div>
+
+                <button
+                    type="button"
+                    class="icon-btn"
+                    id="refreshBtn"
+                    aria-label="Actualizar dados"
+                    title="Actualizar">
+
+                    <span class="material-icons-round">refresh</span>
+
+                </button>
+
+                <div class="topbar-user">
+
+                    <div class="avatar small" id="topAvatar">AD</div>
+
+                    <div class="topbar-user-info">
+                        <strong id="topName">Administrador</strong>
+                        <small>Gestão da plataforma</small>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             CONTEÚDO
+        ================================================== -->
+
+        <div class="content">
+
+
+            <!-- =============================================
+                 1. PAINEL GERAL
+            ============================================== -->
+
+            <section class="view active" id="view-overview">
+
+                <div class="welcome-row">
+
+                    <div>
+                        <p class="eyebrow accent">
+                            RESUMO DA PLATAFORMA
+                        </p>
+
+                        <h2>Bem-vindo ao painel de controlo</h2>
+
+                        <p class="muted">
+                            Acompanhe a actividade e gira o
+                            StudioMusic.AI num só lugar.
+                        </p>
+                    </div>
+
+                    <span class="date-chip">
+
+                        <span class="material-icons-round">
+                            calendar_today
+                        </span>
+
+                        <span id="todayLabel"></span>
+
+                    </span>
+
+                </div>
+
+
+                <!-- CARTÕES DE ESTATÍSTICAS -->
+
+                <div class="stats-grid">
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Total de utilizadores</span>
+
+                            <span class="stat-icon orange">
+                                <span class="material-icons-round">group</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statUsers">0</div>
+
+                        <div class="stat-foot">
+                            <span class="material-icons-round">people_alt</span>
+                            Contas registadas
+                        </div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Total de músicas</span>
+
+                            <span class="stat-icon purple">
+                                <span class="material-icons-round">library_music</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statSongs">0</div>
+
+                        <div class="stat-foot">
+                            <span class="material-icons-round">music_note</span>
+                            Criações da plataforma
+                        </div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Músicas concluídas</span>
+
+                            <span class="stat-icon green">
+                                <span class="material-icons-round">check_circle</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statCompleted">0</div>
+
+                        <div class="stat-foot">
+                            <span class="material-icons-round">task_alt</span>
+                            Gerações concluídas
+                        </div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Publicadas na comunidade</span>
+
+                            <span class="stat-icon blue">
+                                <span class="material-icons-round">public</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statPublished">0</div>
+
+                        <div class="stat-foot">
+                            <span class="material-icons-round">visibility</span>
+                            Visíveis publicamente
+                        </div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Pagamentos pendentes</span>
+
+                            <span class="stat-icon yellow">
+                                <span class="material-icons-round">pending_actions</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statPending">0</div>
+
+                        <div class="stat-foot">
+                            <span class="material-icons-round">schedule</span>
+                            Aguardam revisão
+                        </div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Receita confirmada</span>
+
+                            <span class="stat-icon green">
+                                <span class="material-icons-round">account_balance_wallet</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statRevenue">0 Kz</div>
+
+                        <div class="stat-foot">
+                            <span class="material-icons-round">trending_up</span>
+                            Pagamentos aprovados
+                        </div>
+
+                    </article>
+
+                </div>
+
+
+                <!-- ACTIVIDADE E ACESSO RÁPIDO -->
+
+                <div class="overview-grid">
+
+                    <section class="panel">
+
+                        <div class="panel-heading">
+
+                            <div>
+                                <h3>Actividade recente</h3>
+                                <p>Últimos eventos registados</p>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="text-btn"
+                                data-go="statistics">
+
+                                Ver estatísticas
+
+                                <span class="material-icons-round">
+                                    arrow_forward
+                                </span>
+
+                            </button>
+
+                        </div>
+
+                        <div class="table-wrap">
+
+                            <table>
+
+                                <thead>
+                                    <tr>
+                                        <th>Actividade</th>
+                                        <th>Utilizador</th>
+                                        <th>Data</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="activityTable"></tbody>
+
+                            </table>
+
+                        </div>
+
+                    </section>
+
+
+                    <section class="panel quick-panel">
+
+                        <div class="panel-heading">
+                            <div>
+                                <h3>Acesso rápido</h3>
+                                <p>Operações frequentes</p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="quick-action"
+                            data-go="users">
+
+                            <span class="quick-icon">
+                                <span class="material-icons-round">manage_accounts</span>
+                            </span>
+
+                            <span>
+                                <strong>Gerir utilizadores</strong>
+                                <small>Contas, estados e permissões</small>
+                            </span>
+
+                            <span class="material-icons-round arrow">
+                                chevron_right
+                            </span>
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="quick-action"
+                            data-go="payments">
+
+                            <span class="quick-icon">
+                                <span class="material-icons-round">receipt_long</span>
+                            </span>
+
+                            <span>
+                                <strong>Rever pagamentos</strong>
+                                <small>Confirmar ou rejeitar comprovativos</small>
+                            </span>
+
+                            <span class="material-icons-round arrow">
+                                chevron_right
+                            </span>
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="quick-action"
+                            data-go="community">
+
+                            <span class="quick-icon">
+                                <span class="material-icons-round">public</span>
+                            </span>
+
+                            <span>
+                                <strong>Gerir comunidade</strong>
+                                <small>Publicações e moderação</small>
+                            </span>
+
+                            <span class="material-icons-round arrow">
+                                chevron_right
+                            </span>
+
+                        </button>
+
+                        <div class="notice-box">
+
+                            <span class="material-icons-round">info</span>
+
+                            <p>
+                                Os dados deste painel são carregados
+                                através dos serviços disponíveis
+                                no backend.
+                            </p>
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =============================================
+                 2. UTILIZADORES
+            ============================================== -->
+
+            <section class="view" id="view-users">
+
+                <div class="section-intro">
+
+                    <div>
+                        <h2>Utilizadores</h2>
+                        <p>
+                            Consulte contas e gira o acesso à plataforma.
+                        </p>
+                    </div>
+
+                    <div class="section-badge">
+
+                        <span class="material-icons-round">group</span>
+                        <span id="usersTotalLabel">0 utilizadores</span>
+
+                    </div>
+
+                </div>
+
+
+                <section class="panel">
+
+                    <div class="toolbar">
+
+                        <div class="search-box">
+
+                            <span class="material-icons-round">search</span>
+
+                            <input
+                                id="userSearch"
+                                type="search"
+                                placeholder="Pesquisar nome ou email..."
+                                autocomplete="off">
+
+                        </div>
+
+                        <select
+                            id="userStatusFilter"
+                            class="select-control">
+
+                            <option value="all">Todos os estados</option>
+                            <option value="ATIVO">Activos</option>
+                            <option value="INATIVO">Inactivos</option>
+                            <option value="BLOQUEADO">Bloqueados</option>
+
+                        </select>
+
+                        <select
+                            id="userRoleFilter"
+                            class="select-control">
+
+                            <option value="all">Todos os tipos</option>
+                            <option value="Admin">Administradores</option>
+                            <option value="Utilizador">Utilizadores</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Utilizador</th>
+                                    <th>Email</th>
+                                    <th>Estado</th>
+                                    <th>Tipo</th>
+                                    <th>Registo</th>
+                                    <th class="align-right">Acções</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="usersTable"></tbody>
+
+                        </table>
+
+                    </div>
+
+                    <div
+                        class="table-empty hidden"
+                        id="usersEmpty">
+
+                        Nenhum utilizador corresponde à pesquisa.
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+
+            <!-- =============================================
+                 3. PAINEL DE MÚSICAS
+            ============================================== -->
+
+            <section class="view" id="view-music">
+
+                <div class="section-intro">
+
+                    <div>
+                        <h2>Painel de músicas</h2>
+                        <p>
+                            Consulte, reproduza e modere as músicas geradas.
+                        </p>
+                    </div>
+
+                    <div class="section-badge">
+
+                        <span class="material-icons-round">library_music</span>
+                        <span id="songsTotalLabel">0 músicas</span>
+
+                    </div>
+
+                </div>
+
+
+                <section class="panel">
+
+                    <div class="toolbar">
+
+                        <div class="search-box">
+
+                            <span class="material-icons-round">search</span>
+
+                            <input
+                                id="songSearch"
+                                type="search"
+                                placeholder="Pesquisar título ou utilizador..."
+                                autocomplete="off">
+
+                        </div>
+
+                        <select
+                            id="songStatusFilter"
+                            class="select-control">
+
+                            <option value="all">Todos os estados</option>
+                            <option value="Concluída">Concluídas</option>
+                            <option value="Em processamento">Em processamento</option>
+                            <option value="Falhou">Falhadas</option>
+
+                        </select>
+
+                        <select
+                            id="songPublicFilter"
+                            class="select-control">
+
+                            <option value="all">Públicas e privadas</option>
+                            <option value="public">Públicas</option>
+                            <option value="private">Privadas</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Música</th>
+                                    <th>Utilizador</th>
+                                    <th>Estado</th>
+                                    <th>Publicação</th>
+                                    <th>Data</th>
+                                    <th class="align-right">Acções</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="songsTable"></tbody>
+
+                        </table>
+
+                    </div>
+
+                    <div
+                        class="table-empty hidden"
+                        id="songsEmpty">
+
+                        Nenhuma música corresponde aos filtros.
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+
+            <!-- =============================================
+                 4. PAGAMENTOS
+            ============================================== -->
+
+            <section class="view" id="view-payments">
+
+                <div class="section-intro">
+
+                    <div>
+                        <h2>Pagamentos</h2>
+                        <p>
+                            Revise comprovativos e acompanhe
+                            os pagamentos dos planos.
+                        </p>
+                    </div>
+
+                    <div class="section-badge">
+
+                        <span class="material-icons-round">payments</span>
+                        <span id="paymentsTotalLabel">0 pagamentos</span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="mini-stats">
+
+                    <div>
+                        <span>Pendentes</span>
+                        <strong id="pendingCount">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Confirmados</span>
+                        <strong id="confirmedCount">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Rejeitados</span>
+                        <strong id="rejectedCount">0</strong>
+                    </div>
+
+                </div>
+
+
+                <section class="panel">
+
+                    <div class="toolbar">
+
+                        <div class="search-box">
+
+                            <span class="material-icons-round">search</span>
+
+                            <input
+                                id="paymentSearch"
+                                type="search"
+                                placeholder="Pesquisar utilizador, plano ou referência..."
+                                autocomplete="off">
+
+                        </div>
+
+                        <select
+                            id="paymentStatusFilter"
+                            class="select-control">
+
+                            <option value="all">Todos os estados</option>
+                            <option value="Pendente">Pendentes</option>
+                            <option value="Confirmado">Confirmados</option>
+                            <option value="Rejeitado">Rejeitados</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Utilizador</th>
+                                    <th>Plano</th>
+                                    <th>Valor</th>
+                                    <th>Método</th>
+                                    <th>Comprovativo</th>
+                                    <th>Estado</th>
+                                    <th class="align-right">Acções</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="paymentsTable"></tbody>
+
+                        </table>
+
+                    </div>
+
+                    <div
+                        class="table-empty hidden"
+                        id="paymentsEmpty">
+
+                        Nenhum pagamento corresponde aos filtros.
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+
+            <!-- =============================================
+                 5. COMUNIDADE
+            ============================================== -->
+
+            <section class="view" id="view-community">
+
+                <div class="section-intro">
+
+                    <div>
+                        <h2>Comunidade</h2>
+
+                        <p>
+                            Gira as músicas partilhadas publicamente
+                            sem apagar o ficheiro original.
+                        </p>
+                    </div>
+
+                    <div class="section-badge">
+
+                        <span class="material-icons-round">public</span>
+                        <span id="communityTotalLabel">0 publicações</span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="mini-stats">
+
+                    <div>
+                        <span>Publicadas</span>
+                        <strong id="communityPublished">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Retiradas</span>
+                        <strong id="communityHidden">0</strong>
+                    </div>
+
+                    <div>
+                        <span>Total de músicas</span>
+                        <strong id="communityAll">0</strong>
+                    </div>
+
+                </div>
+
+
+                <section class="panel">
+
+                    <div class="toolbar">
+
+                        <div class="search-box">
+
+                            <span class="material-icons-round">search</span>
+
+                            <input
+                                id="communitySearch"
+                                type="search"
+                                placeholder="Pesquisar título ou autor..."
+                                autocomplete="off">
+
+                        </div>
+
+                        <select
+                            id="communityFilter"
+                            class="select-control">
+
+                            <option value="all">Todas as publicações</option>
+                            <option value="public">Publicadas</option>
+                            <option value="hidden">Retiradas</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div
+                        class="community-list"
+                        id="communityList"></div>
+
+                    <div
+                        class="table-empty hidden"
+                        id="communityEmpty">
+
+                        Nenhuma música encontrada.
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+
+            <!-- =============================================
+                 6. ESTATÍSTICAS
+            ============================================== -->
+
+            <section class="view" id="view-statistics">
+
+                <div class="section-intro">
+
+                    <div>
+                        <h2>Estatísticas</h2>
+
+                        <p>
+                            Visão geral da utilização e do desempenho
+                            da plataforma.
+                        </p>
+                    </div>
+
+                    <div class="section-badge">
+
+                        <span class="material-icons-round">insights</span>
+                        Resumo administrativo
+
+                    </div>
+
+                </div>
+
+
+                <div class="stats-grid compact-stats">
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Utilizadores</span>
+
+                            <span class="stat-icon orange">
+                                <span class="material-icons-round">group</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statsUsers">0</div>
+
+                        <div class="stat-foot">Total de contas</div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Músicas</span>
+
+                            <span class="stat-icon purple">
+                                <span class="material-icons-round">music_note</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statsSongs">0</div>
+
+                        <div class="stat-foot">Total gerado</div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Taxa de conclusão</span>
+
+                            <span class="stat-icon green">
+                                <span class="material-icons-round">task_alt</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statsCompletion">0%</div>
+
+                        <div class="stat-foot">Músicas concluídas</div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-top">
+                            <span>Receita aprovada</span>
+
+                            <span class="stat-icon blue">
+                                <span class="material-icons-round">account_balance_wallet</span>
+                            </span>
+                        </div>
+
+                        <div class="stat-number" id="statsRevenue">0 Kz</div>
+
+                        <div class="stat-foot">Pagamentos confirmados</div>
+
+                    </article>
+
+                </div>
+
+
+                <div class="overview-grid">
+
+                    <section class="panel">
+
+                        <div class="panel-heading">
+                            <div>
+                                <h3>Estado das músicas</h3>
+                                <p>Distribuição por estado</p>
+                            </div>
+                        </div>
+
+                        <div
+                            id="songStatusChart"
+                            class="bar-chart"></div>
+
+                    </section>
+
+
+                    <section class="panel">
+
+                        <div class="panel-heading">
+                            <div>
+                                <h3>Resumo da comunidade</h3>
+                                <p>Estado das publicações</p>
+                            </div>
+                        </div>
+
+                        <div
+                            id="communitySummary"
+                            class="summary-list"></div>
+
+                    </section>
+
+                </div>
+
+
+                <section class="panel activity-panel">
+
+                    <div class="panel-heading">
+
+                        <div>
+                            <h3>Actividade recente</h3>
+                            <p>Eventos registados no painel</p>
+                        </div>
+
+                    </div>
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>Actividade</th>
+                                    <th>Utilizador</th>
+                                    <th>Data</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="statsActivityTable"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<!-- =========================================================
+     NOTIFICAÇÕES
+========================================================== -->
+
+<div
+    class="toast-region"
+    id="toastRegion"
+    aria-live="polite"
+    aria-atomic="false"></div>
+
+
+<!-- =========================================================
+     JANELA DE CONFIRMAÇÃO
+========================================================== -->
+
+<div
+    class="modal-backdrop hidden"
+    id="modalBackdrop">
+
+    <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle">
+
+        <div class="modal-heading">
+
+            <div>
+                <span class="eyebrow accent">STUDIOMUSIC.AI</span>
+                <h3 id="modalTitle">Confirmar acção</h3>
+            </div>
+
+            <button
+                type="button"
+                class="icon-btn"
+                id="modalClose"
+                aria-label="Fechar">
+
+                <span class="material-icons-round">close</span>
+
+            </button>
+
+        </div>
+
+        <p id="modalMessage">Deseja continuar?</p>
+
+        <label
+            class="field-label hidden"
+            id="noteLabel"
+            for="adminNote">
+
+            Nota administrativa (opcional)
+
+        </label>
+
+        <textarea
+            class="note-field hidden"
+            id="adminNote"
+            rows="3"
+            placeholder="Escreva uma nota..."></textarea>
+
+        <div class="modal-actions">
+
+            <button
+                type="button"
+                class="btn btn-secondary"
+                id="modalCancel">
+
+                Cancelar
+
+            </button>
+
+            <button
+                type="button"
+                class="btn btn-primary"
+                id="modalConfirm">
+
+                Confirmar
+
+            </button>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- REPRODUÇÃO DE ÁUDIO -->
+
+<audio id="audioPlayer" preload="none"></audio>
+
+
+<!-- JAVASCRIPT DO PAINEL -->
+<script src="admin.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>StudioMusic.AI</title>
+
+    <meta
+        name="description"
+        content="StudioMusic.AI — Crie, organize e reproduza suas músicas com inteligência artificial."
+    >
+
+    <!-- Material Icons não modificado-->
+    <link
+        href="https://fonts.googleapis.com/icon?family=Material+Icons"
+        rel="stylesheet"
+    >
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =========================================================
+         OVERLAY DO MENU
+    ========================================================== -->
+    <div
+        id="menuOverlay"
+        class="menu-overlay"
+        onclick="closeSidebar()"
+    ></div>
+
+
+    <!-- =========================================================
+         MENU LATERAL
+    ========================================================== -->
+    <aside id="sidebar" class="sidebar">
+
+        <div class="sidebar-header">
+
+            <div class="brand">
+                <span class="material-icons brand-icon">music_note</span>
+
+                <div class="brand-text">
+                    <strong>StudioMusic</strong>
+                    <span>.AI</span>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="sidebar-close"
+                onclick="closeSidebar()"
+                aria-label="Fechar menu">
+                <span class="material-icons">close</span>
+            </button>
+
+        </div>
+        <!-- MENU -->
+        <nav class="sidebar-nav">
+
+            <button
+                type="button"
+                class="nav-item active"
+                data-page="criar"
+                onclick="showPage('criar'); closeSidebar();">
+                <span class="material-icons">auto_awesome</span>
+                <span>Criar música</span>
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                data-page="musicas"
+                onclick="showPage('musicas'); closeSidebar();">
+                <span class="material-icons">library_music</span>
+                <span>Minhas músicas</span>
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                data-page="favoritos"
+                onclick="showPage('favoritos'); closeSidebar();">
+                <span class="material-icons">favorite_border</span>
+                <span>Favoritos</span>
+            </button>
+               
+            <button
+                type="button"
+                class="nav-item"
+                data-page="historico"
+                onclick="showPage('historico'); closeSidebar();">
+                <span class="material-icons">history</span>
+                <span>Histórico</span>
+            </button>
+
+            <div class="community-actions">
+                <a href="comunidade.html" class="btn btn-outline">
+                    <span class="material-icons">groups</span>
+                    Comunidade
+                </a>
+            </div>
+
+            
+        </nav>
+        <!-- PARTE INFERIOR -->
+        <div class="sidebar-footer">
+
+            <div class="api-status">
+                <span id="apiStatusDot" class="status-dot"></span>
+
+                <div>
+                    <small>Servidor</small>
+                    <strong id="apiStatusText">Verificando...</strong>
+                </div>
+            </div>
+
+        </div>
+
+    </aside>
+    <!-- =========================================================
+         CONTEÚDO PRINCIPAL
+    ========================================================== -->
+    <main id="mainContent" class="main-content">
+        <!-- =====================================================
+             TOPBAR
+        ====================================================== -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <!-- HAMBURGUER UNIVERSAL -->
+                <button
+                    id="menuButton"
+                    type="button"
+                    class="menu-button"
+                    onclick="toggleSidebar()"
+                    aria-label="Abrir menu"
+                    aria-expanded="false">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="topbar-title">
+                    <span id="pageTitle">Criar música</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button
+                    type="button"
+                    class="icon-button"
+                    onclick="checkAPI()"
+                    title="Verificar servidor"
+                    aria-label="Verificar servidor">
+                    <span class="material-icons">sync</span>
+                </button>
+
+                <!-- BOTÃO DO UTILIZADOR E DROPDOWN -->
+                <div class="user-menu-container">
+                    <button
+                        id="userMenuButton"
+                        type="button"
+                        class="user-menu-button"
+                        aria-label="Menu do utilizador"
+                        aria-expanded="false">
+                        <span class="material-icons">account_circle</span>
+                        <span class="user-name"></span>
+                        <span class="material-icons">arrow_drop_down</span>
+                    </button>
+
+                    <div id="userDropdown" class="user-dropdown hidden">
+                        <a href="perfil.html" class="dropdown-item">
+                            <span class="material-icons">manage_accounts</span>
+                            <span>Meu Perfil</span>
+                        </a>
+                        <a href="#logout" class="dropdown-item logout-item">
+                            <span class="material-icons">logout</span>
+                            <span>Terminar sessão</span>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+        </header>
+        <!-- =====================================================
+             ÁREA DAS PÁGINAS
+        ====================================================== -->
+        <section class="content">
+            <!-- =================================================
+                 PÁGINA: CRIAR MÚSICA
+            ================================================== -->
+            <section
+                id="page-criar"
+                class="page active">
+                <div class="page-header">
+                    <div>
+                        <h1>Criar música</h1>
+                        <p>
+                            Descreva a música que deseja criar.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <!-- FORMULÁRIO -->
+                <div class="music-form-card">
+                    <!-- TÍTULO -->
+                    <div class="form-group">
+
+                        <label for="title">
+                            Título
+                            <span class="optional">(opcional)</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="title"
+                            name="title"
+                            maxlength="120"
+                            placeholder="Ex.: Meu novo amor"
+                            autocomplete="off">
+
+                    </div>
+
+                    <!-- PROMPT -->
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="prompt">
+                                Descrição da música
+                            </label>
+                            <span
+                                id="promptCounter"
+                                class="character-counter">
+                                0 / 4000
+                            </span>
+
+                        </div>
+                        <textarea
+                            id="prompt"
+                            name="prompt"
+                            rows="7"
+                            maxlength="4000"
+                            placeholder="Descreva o gênero, ritmo, instrumentos, atmosfera, voz, andamento e outros detalhes da música..."
+                        ></textarea>
+                        <p class="field-help">
+                            Quanto mais detalhada for a descrição,
+                            mais controle você terá sobre o resultado.
+                        </p>
+
+                    </div>
+                    <div class="form-group lyrics-group">
+                        <div class="lyrics-header">
+                            <label for="lyricsInput">
+                                <span class="material-icons">lyrics</span>
+                                Letra da música
+                            </label>
+                            <span id="lyricsCounter" class="lyrics-counter">
+                                0 caracteres
+                            </span>
+                        </div>
+                        <textarea 
+                            id="lyricsInput"
+                            name="lyrics"
+                            class="lyrics-textarea"
+                            placeholder="Escreve aqui a letra da sua música...
+                            
+                            [Introdução]
+                            Escreve a introdução...
+                            
+                            [Verso 1]
+                            Escreve o primeiro verso...
+                            
+                            [Refrão]
+                            Escreve o refrão... 
+                            
+                            [Verso 2]
+                            Escreve o segundo verso... 
+                            
+                            [Ponte] 
+                            Escreve a ponte... 
+                            
+                            [Final] 
+                            Escreve o final da música..."
+                                maxlength="10000"
+                                rows="10"
+                                spellcheck="true">
+                        </textarea>
+                        <div class="lyrics-footer">
+                            <span class="lyrics-help">Organiza a letra por versos, refrão e ponte.</span>
+                            <button type="button" id="clearLyricsBtn" class="lyrics-clear-btn">
+                                <span class="material-icons">delete_outline</span>
+                                Limpar letra
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <!-- CONFIGURAÇÕES -->
+                    <div class="form-grid">
+                        <!-- DURAÇÃO -->
+                        <div class="form-group">
+
+                            <label for="duration">
+                                Duração
+                            </label>
+
+                            <select id="duration">
+
+                                <option value="30">
+                                    30 segundos
+                                </option>
+
+                                <option value="60" selected>
+                                    1 minuto
+                                </option>
+
+                                <option value="120">
+                                    2 minutos
+                                </option>
+
+                                <option value="180">
+                                    3 minutos
+                                </option>
+
+                                <option value="240">
+                                    4 minutos
+                                </option>
+
+                                <option value="300">
+                                    5 minutos
+                                </option>
+
+                                <option value="360">
+                                    6 minutos
+                                </option>
+
+                            </select>
+
+                        </div>
+                        <!-- INSTRUMENTAL -->
+                        <div class="form-group">
+
+                            <label>
+                                Tipo
+                            </label>
+
+                            <div class="switch-container">
+
+                                <label class="switch">
+
+                                    <input
+                                        type="checkbox"
+                                        id="instrumental">
+                                    <span class="slider"></span>
+
+                                </label>
+
+                                <span>
+                                    Instrumental
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <!--ÁUDIO DE REFERÊNCIA - MINHA VOZ-->
+                    <div class="form-group voice-upload-section">
+                        <label for="voiceAudioInput">
+                            Minha voz
+                            <span class="optional">(opcional)</span>
+                        </label>
+                        <p class="field-help">
+                            Carregue uma gravação da sua voz para utilizar como referência quando a geração com áudio estiver disponivel.
+                        </p>
+                        <div class="voice-upload-card">
+                            <input
+                                type="file"
+                                id="voiceAudioInput"
+                                accept="audio/mpeg,audio/wav,audio/x-wav,audio/mp4,audio/webm,.mp3,.wav,.m4a,.webm"
+                                hidden>
+                            <button
+                                type="button"
+                                id="selectVoiceBtn"
+                                class="secondary-button">
+                                <span class="material-icons">upload_file</span>
+                                <span>Adicionar minha voz</span>
+                            </button>
+                            <div
+                                id="voiceAudioInfo"
+                                class="voice-audio-info hidden">
+                                <div class="voice-file-details">
+                                    <span class="material-icons">graphi_eq</span>
+                                    <span id="voiceFileName">Nenhum áudio seleccionado</span>
+                                </div>
+                                <audio
+                                    id="voiceAudioPreview"
+                                    controls
+                                    preload="metadata">
+                                </audio>
+                                <button
+                                    type="button"
+                                    id="removeVoiceBtn"
+                                    class="secondary-button danger-button">
+
+                                    <span class="material-icons">
+                                        delete_outline
+                                    </span>
+                                    <span>Remover áudio</span>
+                                <button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- BOTÃO GERAR -->
+                    <div class="generate-area">
+
+                        <button
+                            id="generateBtn"
+                            type="button"
+                            class="primary-button generate-button">
+
+                            <span class="material-icons">
+                                auto_awesome
+                            </span>
+
+                            <span>Gerar música</span>
+
+                        </button>
+
+                    </div>
+                    <!-- STATUS -->
+                    <div
+                        id="generationStatus"
+                        class="generation-status hidden">
+                        <div class="loading-spinner"></div>
+                        <div>
+                            <strong id="statusTitle">
+                                Preparando...
+                            </strong>
+                            <p id="statusMessage">
+                                Aguarde enquanto processamos sua solicitação.
+                            </p>
+
+                        </div>
+
+                    </div>
+                    <!-- PLAYER -->
+                    <div
+                        id="audioPlayerContainer"
+                        class="audio-player-container hidden">
+                        <div class="player-header">
+                            <div class="player-icon">
+                                <span class="material-icons">
+                                    music_note
+                                </span>
+
+                            </div>
+                            <div class="player-info">
+                                <strong id="playerTitle">
+                                    Música gerada
+                                </strong>
+                                <span id="playerSubtitle">
+                                    StudioMusic.AI
+                                </span>
+
+                            </div>
+
+                        </div>
+                        <audio
+                            id="audioPlayer"
+                            controls
+                            preload="metadata"
+                        ></audio>
+                        <div class="player-actions">
+                            <button
+                                id="downloadBtn"
+                                type="button"
+                                class="secondary-button">
+
+                                <span class="material-icons">
+                                    download
+                                </span>
+                                Download
+                            </button>
+                            <button id="deletePlayerBtn"
+                            type="button"
+                            class="secondary-button danger-button">
+                            <span class="material-icons">
+                                delete
+                            </span>
+                            Eliminar música
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- =================================================
+                 PÁGINA: MÚSICAS
+            ================================================== -->
+            <section
+                id="page-musicas"
+                class="page">
+                <div class="page-header">
+                    <div>
+                        <h1>Minhas músicas</h1>
+                        <p>
+                            Todas as músicas geradas no StudioMusic.AI.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        class="secondary-button"
+                        onclick="loadSongs()">
+                        <span class="material-icons">
+                            refresh
+                        </span>
+
+                        Atualizar
+
+                    </button>
+
+                </div>
+
+                <div class="search-box">
+
+                    <span class="material-icons">
+                        search
+                    </span>
+
+                    <input
+                        type="search"
+                        id="songSearch"
+                        placeholder="Pesquisar músicas..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+                <div
+                    id="songsList"
+                    class="songs-list"
+                ></div>
+                
+            </section>
+            <!-- =================================================
+                 PÁGINA: COMUNIDADE
+            ================================================== -->
+            <!--<section
+                id="page-comunidade"
+                class="page">
+                
+                <div class="page-header">
+                    <div>
+                        <h1>Comunidade</h1>
+                        <p>Descubra músicas criadas e partilhadas pelos artistas do StudioMusic.AI.
+                            </p>
+                    </div>
+                    <button 
+                        id="refreshComunityBtn"
+                        type="button"
+                        class="secondary-button">
+                        <span class="material-icons">refresh</span>
+                        <span>Actualizar</span>
+                    </button>
+                </div>
+                <!--PESQUISA-->
+                <!--<div class="search-box">
+                    <span class="material-icons">search</span>
+                    <input
+                        type="search"
+                        id="communitySearch"
+                        placeholder="Pesquisar músicas ou artistas..."
+                        autocomplete="off">
+                </div>
+                <!--LISTA DE MÚSICAS PÚBLICAS-->
+                <div
+                    id="communitySongsList"
+                    class="songs-list">
+                </div>
+            <!--</section>-->
+            <!-- =================================================
+                 PÁGINA: FAVORITOS
+            ================================================== -->
+            <section
+                id="page-favoritos"
+                class="page"            >
+                <div class="page-header">
+                    <div>
+                        <h1>Favoritos</h1>
+                        <p>
+                            Suas músicas favoritas.
+                        </p>
+
+                    </div>
+
+                </div>
+                <div
+                    id="favoritesList"
+                    class="songs-list"
+                ></div>
+
+            </section>
+            <!-- =================================================
+                 PÁGINA: HISTÓRICO
+            ================================================== -->
+            <section
+                id="page-historico"
+                class="page">
+                <div class="page-header">
+                    <div>
+                        <h1>Histórico</h1>
+                        <p>
+                            Veja suas últimas gerações.
+                        </p>
+                    </div>
+                </div>
+                <div
+                    id="historyList"
+                    class="songs-list"
+                ></div>
+
+            </section>
+
+        </section>
+
+    </main>
+    <!-- =========================================================
+         TOAST
+    ========================================================== -->
+    <div
+        id="toast"
+        class="toast"
+        role="alert"
+        aria-live="polite">
+        <span
+            id="toastIcon"
+            class="material-icons"
+        >
+            info
+        </span>
+
+        <span id="toastMessage"></span>
+
+    </div>
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================== -->
+    <script src="app.js"></script>
+
+</body>
+</html>

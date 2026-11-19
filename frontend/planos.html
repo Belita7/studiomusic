@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudioMusic.AI - Planos e Subscrições</title>
+    
+    <!-- Google Fonts & Material Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Estilos (reutilizamos o perfil.css adaptando ou criando secções) -->
+    <link rel="stylesheet" href="perfil.css">
+    <link rel="stylesheet" href="planos.css">
+</head>
+<body>
+
+    <!-- ========================================================== -->
+    <!-- CABEÇALHO / NAVBAR RESPONSIVA                             -->
+    <!-- ========================================================== -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <span class="material-icons logo-icon">music_note</span>
+                <span>StudioMusic<span class="highlight">.AI</span></span>
+            </a>
+
+            <!-- Menu Hambúrguer para Mobile -->
+            <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+                <span class="material-icons">menu</span>
+            </button>
+
+            <!-- Links de Navegação -->
+            <nav class="nav-menu" id="navMenu">
+                <a href="index.html" class="nav-link">
+                    <span class="material-icons">home</span> Início
+                </a>
+                <a href="planos.html" class="nav-link active">
+                    <span class="material-icons">star</span> Planos
+                </a>
+                <a href="perfil.html" class="nav-link">
+                    <span class="material-icons">person</span> Perfil
+                </a>
+                <button class="btn-logout" id="logoutButton">
+                    <span class="material-icons">logout</span> Sair
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ========================================================== -->
+    <!-- CONTEÚDO PRINCIPAL: PLANOS                                 -->
+    <!-- ========================================================== -->
+    <main class="main-container plans-container">
+        <div class="plans-header">
+            <h1>Escolhe o teu Plano</h1>
+            <p>Potencia a tua criação musical com recursos avançados e maior duração.</p>
+        </div>
+
+        <!-- Mensagem de Feedback -->
+        <div id="plansMessage" class="message"></div>
+
+        <!-- Estado da Subscrição Atual -->
+        <div id="currentSubscriptionBox" class="current-sub-box">
+            <h3>Subscrição Atual</h3>
+            <p id="subStatusText">A carregar informações da subscrição...</p>
+        </div>
+
+        <!-- Grelha de Planos -->
+        <div class="plans-grid" id="plansGrid">
+            <!-- Os planos serão injetados dinamicamente via JavaScript -->
+        </div>
+    </main>
+
+    <!-- Modal de Pagamento (Simples para Transferência/Multicaixa) -->
+    <div id="paymentModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h2>Confirmar Subscrição</h2>
+            <p id="modalPlanName">Plano Selecionado</p>
+            
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="paymentMethod">Método de Pagamento</label>
+                <select id="paymentMethod" class="form-control">
+                    <option value="bank_transfer">Transferência Bancária</option>
+                    <option value="multicaixa_express">Multicaixa Express</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="transactionRef">Referência / Comprovativo (Opcional)</label>
+                <input type="text" id="transactionRef" placeholder="Número de referência ou talão">
+            </div>
+
+            <button id="confirmPaymentBtn" class="btn-submit" style="margin-top: 1.5rem;">
+                Submeter Pedido de Pagamento
+            </button>
+        </div>
+    </div>
+
+    <!-- Script JavaScript -->
+    <script src="planos.js"></script>
+</body>
+</html>

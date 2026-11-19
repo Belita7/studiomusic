@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Comunidade | StudioMusic.AI</title>
+
+    <meta
+        name="description"
+        content="Descubra músicas criadas pela comunidade StudioMusic.AI."
+    >
+
+    <!-- MATERIAL ICONS -->
+    <link
+        href="https://fonts.googleapis.com/icon?family=Material+Icons"
+        rel="stylesheet"
+    >
+
+    <!-- CSS PRINCIPAL -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- ESTILOS EXCLUSIVOS DA COMUNIDADE -->
+    <style>
+
+        /* ==========================================
+           COMUNIDADE
+        ========================================== */
+
+        .community-container {
+            width: 100%;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .community-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .community-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .community-header p {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        /* ==========================================
+           PESQUISA
+        ========================================== */
+
+        .community-search {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            background: #151922;
+
+            border: 1px solid #293140;
+            border-radius: 12px;
+
+            padding: 13px 16px;
+            margin-bottom: 25px;
+        }
+
+        .community-search .material-icons {
+            color: #9ca3af;
+        }
+
+        .community-search input {
+            width: 100%;
+
+            border: none;
+            outline: none;
+
+            background: transparent;
+            color: #ffffff;
+
+            font-size: 14px;
+        }
+
+        .community-search input::placeholder {
+            color: #7d8593;
+        }
+
+        /* ==========================================
+           CATEGORIAS
+        ========================================== */
+
+        .community-categories {
+            display: flex;
+            gap: 10px;
+
+            overflow-x: auto;
+
+            margin-bottom: 35px;
+            padding-bottom: 8px;
+        }
+
+        .category-button {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            padding: 10px 16px;
+
+            border: 1px solid #293140;
+            border-radius: 25px;
+
+            background: #151922;
+            color: #cbd5e1;
+
+            font-size: 13px;
+            font-weight: 500;
+
+            cursor: pointer;
+
+            white-space: nowrap;
+
+            transition: 0.2s;
+        }
+
+        .category-button:hover {
+            background: #242b38;
+            color: #ffffff;
+        }
+
+        .category-button.active {
+            background: #7c3aed;
+            color: #ffffff;
+            border-color: #7c3aed;
+        }
+
+        .category-button .material-icons {
+            font-size: 18px;
+        }
+
+        /* ==========================================
+           SECÇÕES
+        ========================================== */
+
+        .community-section {
+            margin-bottom: 40px;
+        }
+
+        .community-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 20px;
+        }
+
+        .community-section-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            font-size: 20px;
+            color: #ffffff;
+        }
+
+        .community-section-header h2 .material-icons {
+            color: #a78bfa;
+        }
+
+        /* ==========================================
+           GRELHA DE MÚSICAS
+        ========================================== */
+
+        .community-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fill, minmax(210px, 1fr));
+
+            gap: 20px;
+        }
+
+        /* ==========================================
+           CARTÕES
+        ========================================== */
+
+        .community-card {
+            background: #151922;
+
+            border: 1px solid #293140;
+            border-radius: 16px;
+
+            overflow: hidden;
+
+            transition: 0.25s;
+        }
+
+        .community-card:hover {
+            transform: translateY(-4px);
+            border-color: #7c3aed;
+        }
+
+        .community-cover {
+            width: 100%;
+            aspect-ratio: 1;
+
+            position: relative;
+
+            background: linear-gradient(
+                135deg,
+                #312e81,
+                #581c87,
+                #111827
+            );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            overflow: hidden;
+        }
+
+        .community-cover img {
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+        .community-cover-placeholder {
+            font-size: 75px;
+            color: rgba(255,255,255,0.65);
+        }
+
+        .community-play {
+            position: absolute;
+
+            right: 12px;
+            bottom: 12px;
+
+            width: 46px;
+            height: 46px;
+
+            border: none;
+            border-radius: 50%;
+
+            background: #7c3aed;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            cursor: pointer;
+
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+        }
+
+        .community-play:hover {
+            background: #6d28d9;
+        }
+
+        .community-card-body {
+            padding: 15px;
+        }
+
+        .community-song-title {
+            font-size: 15px;
+            font-weight: 600;
+
+            color: #ffffff;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+
+            margin-bottom: 7px;
+        }
+
+        .community-creator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            color: #9ca3af;
+            font-size: 13px;
+
+            margin-bottom: 12px;
+        }
+
+        .community-creator .material-icons {
+            font-size: 17px;
+        }
+
+        .community-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding-top: 12px;
+
+            border-top: 1px solid #293140;
+        }
+
+        .community-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        .community-stat .material-icons {
+            font-size: 17px;
+        }
+
+        .community-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .community-action-button {
+            width: 32px;
+            height: 32px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: transparent;
+            color: #9ca3af;
+
+            border: none;
+            border-radius: 8px;
+
+            cursor: pointer;
+        }
+
+        .community-action-button:hover {
+            background: #242b38;
+            color: #ffffff;
+        }
+
+        /* ==========================================
+           ESTADO VAZIO
+        ========================================== */
+
+        .community-empty {
+            text-align: center;
+
+            padding: 70px 20px;
+
+            background: #151922;
+
+            border: 1px solid #293140;
+            border-radius: 16px;
+        }
+
+        .community-empty .material-icons {
+            font-size: 65px;
+            color: #7c3aed;
+
+            margin-bottom: 15px;
+        }
+
+        .community-empty h3 {
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .community-empty p {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        /* ==========================================
+           PLAYER INFERIOR
+        ========================================== */
+
+        .community-player {
+            position: fixed;
+
+            bottom: 0;
+            right: 0;
+            left: 0;
+
+            z-index: 1000;
+
+            background: #11151d;
+
+            border-top: 1px solid #293140;
+
+            padding: 12px 20px;
+
+            display: none;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .community-player.active {
+            display: flex;
+        }
+
+        .community-player-info {
+            min-width: 150px;
+            max-width: 250px;
+        }
+
+        .community-player-info strong {
+            display: block;
+
+            color: white;
+            font-size: 13px;
+
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .community-player-info small {
+            color: #9ca3af;
+        }
+
+        .community-player audio {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .community-player-close {
+            background: transparent;
+            border: none;
+
+            color: white;
+            cursor: pointer;
+        }
+
+        /* ==========================================
+           RESPONSIVIDADE
+        ========================================== */
+
+        @media(max-width: 768px) {
+
+            .community-header h1 {
+                font-size: 23px;
+            }
+
+            .community-grid {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+
+                gap: 12px;
+            }
+
+            .community-card-body {
+                padding: 12px;
+            }
+
+            .community-player {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .community-player-info {
+                flex: 1;
+            }
+
+            .community-player audio {
+                flex-basis: 100%;
+                order: 3;
+            }
+
+        }
+
+        @media(max-width: 380px) {
+
+            .community-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+
+        .community-action-button.like-button { gap: 4px; width: auto; min-width: 38px; padding: 0 5px; }
+        .community-action-button.like-button.liked { color: #ff6b00; }
+        .community-action-button .like-count { font-size: 11px; }
+        .community-player-cover { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 8px; overflow: hidden; display:flex; align-items:center; justify-content:center; background:#252b36; color:#ff6b00; }
+        .community-player-cover img { width:100%; height:100%; object-fit:cover; }
+        .community-player-controls { flex: 1; min-width: 180px; display:flex; flex-direction:column; align-items:center; gap:5px; }
+        .community-player-buttons { display:flex; align-items:center; justify-content:center; gap:10px; }
+        .community-player-buttons button { border:0; background:transparent; color:#e5e7eb; cursor:pointer; display:flex; align-items:center; justify-content:center; min-width:34px; min-height:34px; border-radius:50%; }
+        .community-player-buttons button:hover { background:#252b36; color:#ff6b00; }
+        .community-player-buttons .main-play { width:38px; height:38px; background:#ff6b00; color:#fff; }
+        .community-player-buttons .main-play:hover { background:#e85f00; color:#fff; }
+        .community-player-timeline { width:100%; display:flex; align-items:center; gap:9px; color:#9ca3af; font-size:11px; }
+        .community-player-timeline input { flex:1; min-width:50px; accent-color:#ff6b00; cursor:pointer; }
+        .community-toast { position:fixed; z-index:3000; left:50%; bottom:90px; transform:translate(-50%,15px); opacity:0; pointer-events:none; padding:11px 16px; border-radius:10px; background:#202633; color:#fff; border:1px solid #394252; box-shadow:0 8px 30px rgba(0,0,0,.35); transition:.2s; max-width:calc(100% - 30px); text-align:center; font-size:13px; }
+        .community-toast.show { opacity:1; transform:translate(-50%,0); }
+        .community-toast[data-type="error"] { border-color:#dc5656; }
+        .community-toast[data-type="success"] { border-color:#ff6b00; }
+        @media(max-width:768px) { .community-player { padding:10px 12px; gap:9px; } .community-player-cover { width:42px; height:42px; flex-basis:42px; } .community-player-controls { flex-basis:100%; order:4; } .community-player-info { min-width:0; } }
+
+    </style>
+
+
+<style id="community-share-styles">
+.community-card.community-shared-highlight{outline:2px solid #ff6b00;box-shadow:0 0 0 5px rgba(255,107,0,.13)}
+.community-share-overlay{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}
+.community-share-overlay.active{display:flex}
+.community-share-dialog{position:relative;width:min(100%,430px);padding:26px;border:1px solid rgba(255,107,0,.28);border-radius:18px;background:#171717;color:#fff;box-shadow:0 18px 60px rgba(0,0,0,.45)}
+.community-share-close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#aaa;font-size:28px;cursor:pointer}
+.community-share-symbol{display:inline-flex;color:#ff6b00;font-size:30px;margin-bottom:8px}
+.community-share-dialog h3{margin:0 0 7px;font-size:20px}
+.community-share-description{margin:0 0 20px;color:#aaa;font-size:13px;overflow-wrap:anywhere}
+.community-share-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.community-share-grid button{min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid #343434;border-radius:12px;background:#222;color:#eee;cursor:pointer;font-size:12px}
+.community-share-grid button:hover{border-color:#ff6b00;background:#29221d}
+.community-share-grid .material-icons{font-size:23px;color:#ff6b00}
+.community-share-link{display:flex;gap:7px;margin-top:16px}
+.community-share-link input{min-width:0;flex:1;padding:10px;border:1px solid #393939;border-radius:8px;background:#101010;color:#ddd;font-size:11px}
+.community-share-link button{width:42px;border:0;border-radius:8px;background:#ff6b00;color:#fff;cursor:pointer}
+@media(max-width:380px){.community-share-dialog{padding:20px}.community-share-grid{gap:7px}.community-share-grid button{min-height:70px}}
+
+
+/* CORREÇÕES DE VISIBILIDADE E RESPONSIVIDADE — StudioMusic.AI */
+*, *::before, *::after { box-sizing: border-box; }
+html { width:100%; min-width:320px; overflow-x:hidden; }
+body { width:100%; min-width:320px; overflow-x:hidden; }
+#mainContent, .main-content, .content, .community-container { min-width:0; width:100%; max-width:100%; }
+.content { padding: clamp(12px, 2.2vw, 30px) !important; }
+.community-container { max-width:1500px; margin-inline:auto; }
+.community-header, .community-search, .community-section, .community-section-header { min-width:0; }
+.community-grid { display:grid !important; grid-template-columns:repeat(auto-fit, minmax(min(100%, 235px), 1fr)) !important; gap:16px !important; width:100%; }
+.community-card { min-width:0; width:100%; }
+.community-card-body { min-width:0; }
+.community-card-footer { display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
+.community-stat { flex:1 1 90px; min-width:0; overflow-wrap:anywhere; }
+.community-actions { display:flex !important; flex:0 0 auto; align-items:center; justify-content:flex-end; gap:7px; margin-left:auto; min-width:max-content; }
+.community-action-button { display:inline-flex !important; visibility:visible !important; opacity:1 !important; flex:0 0 auto; align-items:center; justify-content:center; gap:5px; min-width:36px; min-height:36px; padding:0 8px; border:1px solid #3a414d !important; border-radius:9px; color:#e5e7eb !important; background:#202633 !important; }
+.community-action-button .material-icons { display:inline-block !important; font-size:19px; line-height:1; }
+.community-action-button.share-button { width:auto !important; min-width:92px; color:#fff !important; background:#ff6b00 !important; border-color:#ff6b00 !important; }
+.community-action-button.share-button:hover { background:#e85f00 !important; border-color:#e85f00 !important; }
+.community-action-button.share-button .share-label { display:inline !important; font-size:12px; font-weight:600; white-space:nowrap; }
+.community-action-button.like-button { width:auto !important; min-width:52px; }
+.community-action-button.like-button.liked { color:#ff8a45 !important; border-color:#ff6b00 !important; }
+.community-cover img { display:block; max-width:100%; }
+.community-player { max-width:100vw; min-width:0; flex-wrap:wrap; }
+.community-player-info { min-width:0; overflow:hidden; }
+.community-player-controls { min-width:0; }
+.community-player-timeline { min-width:0; }
+.community-share-dialog { width:min(100%,430px); max-height:calc(100dvh - 30px); overflow-y:auto; }
+.community-share-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.community-share-grid button { min-width:0; }
+@media (max-width: 900px) {
+  .community-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:12px !important; }
+  .community-header h1 { font-size:clamp(21px,4vw,26px); }
+}
+@media (max-width: 600px) {
+  .content { padding:12px !important; }
+  .community-header { margin-bottom:18px; }
+  .community-header h1 { font-size:22px; }
+  .community-header p { font-size:13px; line-height:1.5; }
+  .community-search { padding:11px 12px; margin-bottom:16px; }
+  .community-categories { gap:8px; margin-bottom:22px; padding-bottom:8px; max-width:100%; }
+  .category-button { padding:9px 12px; flex:0 0 auto; }
+  .community-section { margin-bottom:24px; }
+  .community-section-header h2 { font-size:18px; }
+  .community-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; }
+  .community-card-body { padding:10px; }
+  .community-song-title { font-size:13px; }
+  .community-creator { font-size:11px; }
+  .community-card-footer { align-items:flex-start; gap:8px; }
+  .community-actions { width:100%; margin-left:0; justify-content:flex-start; }
+  .community-action-button { min-height:34px; }
+  .community-action-button.share-button { min-width:100px; }
+  .community-player { padding:9px 10px; gap:8px; }
+  .community-player-cover { width:38px; height:38px; flex-basis:38px; }
+  .community-player-info { flex:1 1 calc(100% - 90px); }
+  .community-player-controls { flex:1 1 100%; order:4; width:100%; }
+  .community-player-buttons { gap:6px; }
+  .community-player-timeline { gap:6px; }
+}
+@media (max-width: 360px) {
+  .community-grid { grid-template-columns:1fr !important; }
+  .community-card-footer { align-items:center; }
+  .community-actions { width:auto; margin-left:auto; }
+  .community-action-button.share-button { min-width:90px; }
+  .community-share-dialog { padding:18px; }
+  .community-share-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+</style>
+
+</head>
+
+<body>
+
+    <!-- ==========================================
+         OVERLAY
+    ========================================== -->
+
+    <div
+        id="menuOverlay"
+        class="menu-overlay"
+        onclick="closeSidebar()"
+    ></div>
+
+
+    <!-- ==========================================
+         MENU LATERAL
+    ========================================== -->
+
+    <aside id="sidebar" class="sidebar">
+
+        <div class="sidebar-header">
+
+            <div class="brand">
+
+                <span class="material-icons brand-icon">
+                    music_note
+                </span>
+
+                <div class="brand-text">
+                    <strong>StudioMusic</strong>
+                    <span>.AI</span>
+                </div>
+
+            </div>
+
+            <button
+                type="button"
+                class="sidebar-close"
+                onclick="closeSidebar()"
+            >
+                <span class="material-icons">close</span>
+            </button>
+
+        </div>
+
+
+        <!-- NAVEGAÇÃO -->
+
+        <nav class="sidebar-nav">
+
+            <a
+                href="index.html"
+                class="nav-item"
+            >
+                <span class="material-icons">
+                    auto_awesome
+                </span>
+
+                <span>Criar música</span>
+            </a>
+
+            <a
+                href="index.html#musicas"
+                class="nav-item"
+            >
+                <span class="material-icons">
+                    library_music
+                </span>
+
+                <span>Minhas músicas</span>
+            </a>
+
+            <a
+                href="index.html#favoritos"
+                class="nav-item"
+            >
+                <span class="material-icons">
+                    favorite_border
+                </span>
+
+                <span>Favoritos</span>
+            </a>
+
+            <a
+                href="index.html#historico"
+                class="nav-item"
+            >
+                <span class="material-icons">
+                    history
+                </span>
+
+                <span>Histórico</span>
+            </a>
+
+            <a
+                href="comunidade.html"
+                class="nav-item active"
+            >
+                <span class="material-icons">
+                    groups
+                </span>
+
+                <span>Comunidade</span>
+            </a>
+
+        </nav>
+
+
+        <!-- SERVIDOR -->
+
+        <div class="sidebar-footer">
+
+            <div class="api-status">
+
+                <span
+                    id="apiStatusDot"
+                    class="status-dot"
+                ></span>
+
+                <div>
+                    <small>Servidor</small>
+
+                    <strong id="apiStatusText">
+                        Verificando...
+                    </strong>
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ==========================================
+         CONTEÚDO PRINCIPAL
+    ========================================== -->
+
+    <main
+        id="mainContent"
+        class="main-content"
+    >
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button
+                    id="menuButton"
+                    type="button"
+                    class="menu-button"
+                    onclick="toggleSidebar()"
+                    aria-label="Abrir menu"
+                    aria-expanded="false"
+                >
+                    <span class="material-icons">menu</span>
+                </button>
+
+                <div class="topbar-title">
+                    <span>Comunidade</span>
+                </div>
+
+            </div>
+
+
+            <div class="topbar-right">
+
+                <button
+                    type="button"
+                    class="icon-button"
+                    onclick="checkAPI()"
+                    title="Verificar servidor"
+                >
+                    <span class="material-icons">
+                        sync
+                    </span>
+                </button>
+
+
+                <!-- UTILIZADOR -->
+
+                <div class="user-menu-container">
+
+                    <button
+                        id="userMenuButton"
+                        type="button"
+                        class="user-menu-button"
+                        aria-expanded="false"
+                    >
+
+                        <span class="material-icons">
+                            account_circle
+                        </span>
+
+                        <span class="user-name"></span>
+
+                        <span class="material-icons">
+                            arrow_drop_down
+                        </span>
+
+                    </button>
+
+
+                    <div
+                        id="userDropdown"
+                        class="user-dropdown hidden"
+                    >
+
+                        <a
+                            href="perfil.html"
+                            class="dropdown-item"
+                        >
+                            <span class="material-icons">
+                                manage_accounts
+                            </span>
+
+                            <span>Conta</span>
+                        </a>
+
+                        <a
+                            href="#logout"
+                            id="communityLogout"
+                            class="dropdown-item logout-item"
+                        >
+                            <span class="material-icons">
+                                logout
+                            </span>
+
+                            <span>Terminar sessão</span>
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- ======================================
+             ÁREA COMUNIDADE
+        ======================================= -->
+
+        <section class="content">
+
+            <div class="community-container">
+
+                <!-- CABEÇALHO -->
+
+                <div class="community-header">
+
+                    <div>
+
+                        <h1>Comunidade musical</h1>
+
+                        <p>
+                            Descubra músicas criadas por artistas
+                            da comunidade StudioMusic.AI.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- PESQUISA -->
+
+                <div class="community-search">
+
+                    <span class="material-icons">
+                        search
+                    </span>
+
+                    <input
+                        type="search"
+                        id="communitySearch"
+                        placeholder="Pesquisar músicas ou criadores..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+                <!-- CATEGORIAS -->
+
+                <div class="community-categories">
+
+                    <button
+                        class="category-button active"
+                        data-category="todos"
+                    >
+                        <span class="material-icons">
+                            apps
+                        </span>
+
+                        Todos
+                    </button>
+
+
+                    <button
+                        class="category-button"
+                        data-category="gospel"
+                    >
+                        Gospel
+                    </button>
+
+
+                    <button
+                        class="category-button"
+                        data-category="kizomba"
+                    >
+                        Kizomba
+                    </button>
+
+
+                    <button
+                        class="category-button"
+                        data-category="semba"
+                    >
+                        Semba
+                    </button>
+
+
+                    <button
+                        class="category-button"
+                        data-category="hip-hop"
+                    >
+                        Hip-Hop
+                    </button>
+
+
+                    <button
+                        class="category-button"
+                        data-category="r&b"
+                    >
+                        R&B
+                    </button>
+
+
+                    <button
+                        class="category-button"
+                        data-category="pop"
+                    >
+                        Pop
+                    </button>
+
+
+                    <button
+                        class="category-button"
+                        data-category="afrobeat"
+                    >
+                        Afrobeat
+                    </button>
+
+
+                    <button
+                        class="category-button"
+                        data-category="outros"
+                    >
+                        Outros
+                    </button>
+
+                </div>
+
+
+                <!-- MÚSICAS RECENTES -->
+
+                <section class="community-section">
+
+                    <div class="community-section-header">
+
+                        <h2>
+
+                            <span class="material-icons">
+                                public
+                            </span>
+
+                            Músicas da comunidade
+
+                        </h2>
+
+                    </div>
+
+
+                    <!-- LISTA DE MÚSICAS -->
+
+                    <div
+                        id="communitySongs"
+                        class="community-grid"
+                    ></div>
+
+
+                    <!-- ESTADO VAZIO -->
+
+                    <div
+                        id="communityEmpty"
+                        class="community-empty"
+                    >
+
+                        <span class="material-icons">
+                            library_music
+                        </span>
+
+                        <h3>
+                            Ainda não existem músicas públicas
+                        </h3>
+
+                        <p>
+                            Quando os utilizadores publicarem
+                            músicas, elas aparecerão aqui.
+                        </p>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ==========================================
+         PLAYER INFERIOR
+    ========================================== -->
+
+    <div
+        id="communityPlayer"
+        class="community-player"
+    >
+
+        <div id="communityPlayerCover" class="community-player-cover"><span class="material-icons">music_note</span></div>
+
+        <div class="community-player-info">
+
+            <strong id="communityPlayerTitle">
+                Música
+            </strong>
+
+            <small id="communityPlayerArtist">
+                StudioMusic.AI
+            </small>
+
+        </div>
+
+        <audio
+            id="communityAudio"
+            controls
+            preload="metadata"
+        ></audio>
+
+        <button
+            type="button"
+            class="community-player-close"
+            onclick="closeCommunityPlayer()"
+            aria-label="Fechar reprodutor"
+        >
+            <span class="material-icons">
+                close
+            </span>
+        </button>
+
+    </div>
+
+
+    <!-- ==========================================
+         JAVASCRIPT EXCLUSIVO DA COMUNIDADE
+    ========================================== -->
+
+    <script src="comunidade.js" defer></script>
+
+
+</body>
+</html>

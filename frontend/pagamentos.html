@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Pagamentos | StudioMusic.AI</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="pagamentos.css">
+
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+</head>
+
+<body class="payments-page">
+
+<header class="payments-header">
+    <a href="index.html" class="brand">
+        <span class="material-icons">graphic_eq</span>
+        <span>StudioMusic<span class="brand-ai">.AI</span></span>
+    </a>
+
+    <a href="perfil.html" class="back-profile">
+        <span class="material-icons">account_circle</span>
+        Meu perfil
+    </a>
+</header>
+
+<main class="payments-container">
+
+    <section class="payments-intro">
+        <span class="section-label">PLANOS E PAGAMENTOS</span>
+
+        <h1>Escolhe o teu plano</h1>
+
+        <p>
+            Desbloqueia mais possibilidades para criar,
+            guardar e partilhar as tuas músicas com IA.
+        </p>
+    </section>
+
+    <div id="paymentMessage" class="payment-message" hidden></div>
+
+    <section class="current-subscription">
+        <div class="subscription-icon">
+            <span class="material-icons">workspace_premium</span>
+        </div>
+
+        <div class="subscription-info">
+            <span class="small-label">PLANO ACTUAL</span>
+            <h2 id="currentPlanName">A carregar...</h2>
+            <p id="currentPlanDetails">A consultar a tua assinatura.</p>
+        </div>
+
+        <span id="subscriptionStatus" class="status-badge">...</span>
+    </section>
+
+    <section class="plans-section">
+        <div class="section-heading">
+            <div>
+                <h2>Planos disponíveis</h2>
+                <p>Escolhe o plano que melhor corresponde às tuas necessidades.</p>
+            </div>
+        </div>
+
+        <div id="plansContainer" class="plans-grid">
+            <div class="loading-card">
+                <span class="material-icons">hourglass_top</span>
+                A carregar planos...
+            </div>
+        </div>
+    </section>
+
+    <section class="payment-method-section">
+
+        <div class="section-heading">
+            <div>
+                <h2>Método de pagamento</h2>
+                <p>Selecciona como pretendes efectuar o pagamento.</p>
+            </div>
+        </div>
+
+        <div class="payment-methods">
+
+            <label class="payment-method selected">
+                <input type="radio"
+                       name="paymentMethod"
+                       value="bitpay"
+                       checked>
+
+                <span class="method-icon bitpay-icon">
+                    <span class="material-icons">account_balance</span>
+                </span>
+
+                <span class="method-info">
+                    <strong>BitPay Angola</strong>
+                    <small>Multicaixa Express e Referência Multicaixa</small>
+                </span>
+
+                <span class="material-icons method-check">check_circle</span>
+            </label>
+
+            <label class="payment-method">
+                <input type="radio"
+                       name="paymentMethod"
+                       value="paddle">
+
+                <span class="method-icon paddle-icon">
+                    <span class="material-icons">credit_card</span>
+                </span>
+
+                <span class="method-info">
+                    <strong>Paddle</strong>
+                    <small>Pagamento internacional por cartão</small>
+                </span>
+
+                <span class="material-icons method-check">check_circle</span>
+            </label>
+
+        </div>
+
+        <div id="bitpayOptions" class="method-options">
+
+            <label for="bitpayPaymentType">Tipo de pagamento</label>
+
+            <select id="bitpayPaymentType">
+                <option value="multicaixa_express">
+                    Multicaixa Express
+                </option>
+
+                <option value="multicaixa_reference">
+                    Referência Multicaixa
+                </option>
+            </select>
+
+            <div id="bitpayPhoneGroup">
+                <label for="bitpayPhone">Número Multicaixa Express</label>
+
+                <input type="tel"
+                       id="bitpayPhone"
+                       placeholder="Ex.: 923000000"
+                       autocomplete="tel"
+                       maxlength="15">
+            </div>
+
+            <p class="method-note">
+                O pagamento será processado no ambiente Sandbox do BitPay.
+            </p>
+        </div>
+
+        <div id="paddleOptions" class="method-options" hidden>
+            <p class="method-note">
+                O Paddle processa pagamentos em dólares americanos (USD).
+                O checkout será aberto numa janela segura.
+            </p>
+        </div>
+
+        <button type="button"
+                id="payButton"
+                class="pay-button"
+                disabled>
+
+            <span class="material-icons">lock</span>
+            <span id="payButtonText">Selecciona um plano</span>
+        </button>
+
+        <p class="secure-note">
+            <span class="material-icons">verified_user</span>
+            Os teus pagamentos são processados por plataformas externas seguras.
+        </p>
+
+    </section>
+
+    <section id="bitpayResult" class="bitpay-result" hidden>
+        <div class="result-icon">
+            <span class="material-icons">hourglass_top</span>
+        </div>
+
+        <h3>Pagamento em processamento</h3>
+
+        <p id="bitpayResultText">
+            Aguarda a confirmação do pagamento.
+        </p>
+
+        <div id="bitpayReferenceDetails" hidden>
+            <div class="reference-row">
+                <span>Entidade</span>
+                <strong id="bitpayEntity">—</strong>
+            </div>
+
+            <div class="reference-row">
+                <span>Referência</span>
+                <strong id="bitpayReference">—</strong>
+            </div>
+
+            <div class="reference-row">
+                <span>Validade</span>
+                <strong id="bitpayExpiry">—</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="history-section">
+        <div class="section-heading">
+            <div>
+                <h2>Histórico de pagamentos</h2>
+                <p>Consulta os teus pagamentos anteriores.</p>
+            </div>
+
+            <button id="refreshPayments" class="refresh-button">
+                <span class="material-icons">refresh</span>
+                Actualizar
+            </button>
+        </div>
+
+        <div class="history-table-wrapper">
+            <table class="payments-table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Plano</th>
+                        <th>Método</th>
+                        <th>Valor</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+
+                <tbody id="paymentsHistory">
+                    <tr>
+                        <td colspan="5" class="empty-history">
+                            A carregar histórico...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+<footer class="payments-footer">
+    <p>© 2026 StudioMusic.AI — Todos os direitos reservados.</p>
+</footer>
+
+<script src="pagamentos.js"></script>
+
+</body>
+</html>

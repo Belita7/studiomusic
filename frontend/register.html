@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Crie a sua conta no EasyMusic.AI"
+    >
+
+    <title>Criar conta - StudioMusic.AI</title>
+
+    <!-- Material Icons -->
+    <link
+        href="https://fonts.googleapis.com/icon?family=Material+Icons"
+        rel="stylesheet"
+    >
+
+    <!-- CSS -->
+    <link
+        rel="stylesheet"
+        href="register.css"
+    >
+
+</head>
+
+
+<body>
+
+    <main class="auth-container">
+
+        <!-- ==================================================
+             CARTÃO DE REGISTRO
+        =================================================== -->
+
+        <section class="register-card">
+
+            <!-- LOGO -->
+            <div class="brand">
+
+                <div class="brand-icon">
+
+                    <span class="material-icons">
+                        music_note
+                    </span>
+
+                </div>
+
+                <div class="brand-text">
+
+                    <h1>
+                        StudioMusic<span>.AI</span>
+                    </h1>
+
+                    <p>
+                        Crie. Imagine. Ouça.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- TÍTULO -->
+
+            <div class="register-header">
+
+                <h2>
+                    Criar uma conta
+                </h2>
+
+                <p>
+                    Crie a sua conta para começar a criar músicas
+                    com inteligência artificial.
+                </p>
+
+            </div>
+
+
+            <!-- MENSAGEM -->
+
+            <div
+                id="registerMessage"
+                class="message"
+                hidden
+            ></div>
+
+
+            <!-- FORMULÁRIO -->
+
+            <form
+                id="registerForm"
+                autocomplete="on"
+            >
+
+                <!-- NOME -->
+
+                <div class="form-group">
+
+                    <label for="name">
+                        Nome
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <span class="material-icons">
+                            person
+                        </span>
+
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            placeholder="Digite o seu nome"
+                            autocomplete="name"
+                            minlength="2"
+                            maxlength="100"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- EMAIL -->
+
+                <div class="form-group">
+
+                    <label for="email">
+                        Email
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <span class="material-icons">
+                            email
+                        </span>
+
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="Digite o seu email"
+                            autocomplete="email"
+                            maxlength="200"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- SENHA -->
+
+                <div class="form-group">
+
+                    <label for="password">
+                        Senha
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <span class="material-icons">
+                            lock
+                        </span>
+
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Crie uma senha"
+                            autocomplete="new-password"
+                            minlength="8"
+                            maxlength="128"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            id="togglePassword"
+                            aria-label="Mostrar senha"
+                        >
+
+                            <span class="material-icons">
+                                visibility
+                            </span>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- CONFIRMAR SENHA -->
+
+                <div class="form-group">
+
+                    <label for="confirmPassword">
+                        Confirmar senha
+                    </label>
+
+                    <div class="input-wrapper">
+
+                        <span class="material-icons">
+                            lock_outline
+                        </span>
+
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            placeholder="Digite a senha novamente"
+                            autocomplete="new-password"
+                            minlength="8"
+                            maxlength="128"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            id="toggleConfirmPassword"
+                            aria-label="Mostrar senha"
+                        >
+
+                            <span class="material-icons">
+                                visibility
+                            </span>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FORÇA DA SENHA -->
+
+                <div
+                    id="passwordStrength"
+                    class="password-strength"
+                >
+
+                    <div class="strength-bar">
+
+                        <span
+                            id="strengthProgress"
+                        ></span>
+
+                    </div>
+
+                    <span
+                        id="strengthText"
+                    >
+                        Senha deve ter pelo menos 8 caracteres
+                    </span>
+
+                </div>
+
+
+                <!-- TERMOS -->
+
+                <div class="terms">
+
+                    <label class="checkbox-container">
+
+                        <input
+                            type="checkbox"
+                            id="terms"
+                            name="terms"
+                            required
+                        >
+
+                        <span class="checkmark"></span>
+
+                        <span class="terms-text">
+
+                            Concordo com os
+                            <a
+                                href="#"
+                                id="termsLink"
+                            >
+                                Termos de utilização
+                            </a>
+
+                            e a
+                            <a
+                                href="#"
+                                id="privacyLink"
+                            >
+                                Política de privacidade
+                            </a>.
+
+                        </span>
+
+                    </label>
+
+                </div>
+
+
+                <!-- BOTÃO -->
+
+                <button
+                    type="submit"
+                    id="registerButton"
+                    class="register-button"
+                >
+
+                    <span
+                        id="registerButtonIcon"
+                        class="material-icons"
+                    >
+                        person_add
+                    </span>
+
+                    <span id="registerButtonText">
+                        Criar conta
+                    </span>
+
+                </button>
+
+
+            </form>
+
+
+            <!-- DIVISOR -->
+
+            <div class="divider">
+
+                <span></span>
+
+                <p>
+                    ou
+                </p>
+
+                <span></span>
+
+            </div>
+
+
+            <!-- GOOGLE -->
+
+            <button
+                type="button"
+                id="googleRegister"
+                class="google-button"
+            >
+
+                <span class="google-icon">
+                    G
+                </span>
+
+                <span>
+                    Continuar com Google
+                </span>
+
+            </button>
+
+
+            <!-- LOGIN -->
+
+            <div class="login-link">
+
+                <span>
+                    Já possui uma conta?
+                </span>
+
+                <a href="login.html">
+                    Entrar
+                </a>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================================
+             RODAPÉ
+        =================================================== -->
+
+        <footer class="auth-footer">
+
+            <span>
+                © 2026 StudioMusic.AI
+            </span>
+
+            <span class="footer-separator">
+                •
+            </span>
+
+            <span>
+                Música criada com IA
+            </span>
+
+        </footer>
+
+
+    </main>
+
+
+    <!-- JAVASCRIPT -->
+
+    <script src="register.js"></script>
+
+</body>
+
+</html>

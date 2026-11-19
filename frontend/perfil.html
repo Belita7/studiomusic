@@ -1,0 +1,634 @@
+<!DOCTYPE html><html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Meu Perfil | StudioMusic.AI</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="perfil.css">
+
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+</head><body class="profile-page"><!-- SOBREPOSIÇÃO DO MENU MOBILE -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-header">
+        <a href="index.html" class="logo">
+            <span class="material-icons">graphic_eq</span>
+            <span>StudioMusic<span class="logo-ai">.AI</span></span>
+        </a>
+
+        <button
+            type="button"
+            class="sidebar-close"
+            id="sidebarClose"
+            aria-label="Fechar menu">
+            <span class="material-icons">close</span>
+        </button>
+    </div>
+
+    <nav class="sidebar-nav">
+
+        <div class="nav-section">
+            <span class="nav-section-title">MENU PRINCIPAL</span>
+
+            <a href="index.html" class="nav-item">
+                <span class="material-icons">music_note</span>
+                <span>Criar música</span>
+            </a>
+
+            <a href="index.html#musicas" class="nav-item">
+                <span class="material-icons">library_music</span>
+                <span>Minhas músicas</span>
+            </a>
+
+            <a href="index.html#favoritos" class="nav-item">
+                <span class="material-icons">favorite_border</span>
+                <span>Favoritos</span>
+            </a>
+
+            <a href="index.html#historico" class="nav-item">
+                <span class="material-icons">history</span>
+                <span>Histórico</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-section-title">COMUNIDADE</span>
+
+            <a href="comunidade.html" class="nav-item">
+                <span class="material-icons">groups</span>
+                <span>Comunidade</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-section-title">A MINHA CONTA</span>
+
+            <a href="index.html" class="nav-item active">
+                <span class="material-icons">person</span>
+                <span>Meu perfil</span>
+            </a>
+
+            <a href="pagamentos.html" class="nav-item">
+                <span class="material-icons">payments</span>
+                <span>Plano e Assinaturas</span>
+            </a>
+        </div>
+
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-footer-brand">
+            <span class="material-icons">headphones</span>
+            <div>
+                <strong>StudioMusic.AI</strong>
+                <small>A tua música, a tua criatividade.</small>
+            </div>
+        </div>
+    </div>
+
+</aside>
+
+<!-- ÁREA PRINCIPAL -->
+<main class="main-content">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+
+        <div class="topbar-left">
+            <button
+                type="button"
+                class="menu-toggle"
+                id="menuToggle"
+                aria-label="Abrir menu">
+                <span class="material-icons">menu</span>
+            </button>
+
+            <div class="breadcrumb">
+                <span>Conta</span>
+                <span class="material-icons">chevron_right</span>
+                <strong>Meu perfil</strong>
+            </div>
+        </div>
+
+        <div class="topbar-right">
+
+            <div class="api-status" id="apiStatus">
+                <span class="status-dot" id="apiStatusDot"></span>
+                <span id="apiStatusText">A verificar ligação...</span>
+            </div>
+
+            <div class="user-menu-container">
+
+                <button
+                    type="button"
+                    class="user-menu-button"
+                    id="userMenuButton"
+                    aria-expanded="false">
+
+                    <span class="material-icons">account_circle</span>
+
+                    <span id="topbarUserName">Minha conta</span>
+
+                    <span class="material-icons">expand_more</span>
+                </button>
+
+                <div class="user-dropdown" id="userDropdown">
+
+                    <a href="index.html" class="dropdown-item">
+                        <span class="material-icons">auto_awesome</span>
+                        Criar Música
+                    </a>
+
+                    <a href="perfil.html#assinatura" class="dropdown-item">
+                        <span class="material-icons">workspace_premium</span>
+                        Minha assinatura
+                    </a>
+
+                    <button
+                        type="button"
+                        class="dropdown-item logout-item"
+                        id="profileLogout">
+                        <span class="material-icons">logout</span>
+                        Terminar sessão
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </header>
+
+    <!-- CONTEÚDO -->
+    <div class="profile-container">
+
+        <!-- TÍTULO -->
+        <section class="page-heading">
+            <div>
+                <h1>Meu perfil</h1>
+                <p>Gere os teus dados, a tua assinatura e a tua presença na comunidade.</p>
+            </div>
+        </section>
+
+        <!-- CARTÃO DO PERFIL -->
+        <section class="profile-hero-card">
+
+            <div class="profile-avatar-wrapper">
+
+                <div class="profile-avatar" id="profileAvatar">
+                    <span class="material-icons">account_circle</span>
+                </div>
+
+                <button
+                    type="button"
+                    class="avatar-edit-button"
+                    id="changeAvatarButton"
+                    aria-label="Alterar fotografia">
+                    <span class="material-icons">photo_camera</span>
+                </button>
+
+            </div>
+
+            <div class="profile-hero-info">
+
+                <h2 id="profileDisplayName">A carregar perfil...</h2>
+
+                <p id="profileDisplayEmail">A carregar e-mail...</p>
+
+                <div class="profile-badges">
+                    <span class="profile-role-badge" id="profileRole">
+                        Utilizador
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="profile-hero-action">
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    id="editProfileButton">
+                    <span class="material-icons">edit</span>
+                    Editar perfil
+                </button>
+            </div>
+
+        </section>
+
+        <!-- ESTATÍSTICAS -->
+        <section class="profile-stats-grid">
+
+            <article class="profile-stat-card">
+                <div class="profile-stat-icon">
+                    <span class="material-icons">library_music</span>
+                </div>
+
+                <div class="profile-stat-info">
+                    <span>Total de músicas</span>
+                    <strong id="profileTotalSongs">0</strong>
+                </div>
+            </article>
+
+            <article class="profile-stat-card">
+                <div class="profile-stat-icon">
+                    <span class="material-icons">public</span>
+                </div>
+
+                <div class="profile-stat-info">
+                    <span>Músicas publicadas</span>
+                    <strong id="profilePublicSongs">0</strong>
+                </div>
+            </article>
+
+            <article class="profile-stat-card">
+                <div class="profile-stat-icon">
+                    <span class="material-icons">favorite</span>
+                </div>
+
+                <div class="profile-stat-info">
+                    <span>Músicas favoritas</span>
+                    <strong id="profileFavorites">0</strong>
+                </div>
+            </article>
+
+        </section>
+
+        <!-- PLANO E ASSINATURA -->
+        <section class="profile-section" id="assinatura">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Plano e assinatura</h2>
+                    <p>Consulta o teu plano e acompanha a utilização da tua conta.</p>
+                </div>
+
+                <span class="material-icons section-heading-icon">
+                    workspace_premium
+                </span>
+            </div>
+
+            <div class="subscription-card">
+
+                <div class="subscription-top">
+
+                    <div class="subscription-plan-icon">
+                        <span class="material-icons">music_note</span>
+                    </div>
+
+                    <div class="subscription-plan-info">
+                        <span class="subscription-label">PLANO ATUAL</span>
+                        <h3 id="subscriptionPlanName">A verificar...</h3>
+                        <p id="subscriptionDescription">
+                            As informações do teu plano serão apresentadas aqui.
+                        </p>
+                    </div>
+
+                    <span
+                        class="subscription-status"
+                        id="subscriptionStatus">
+                        Não verificado
+                    </span>
+
+                </div>
+
+                <div class="subscription-details">
+
+                    <div class="subscription-detail">
+                        <span class="material-icons">schedule</span>
+                        <div>
+                            <small>Duração máxima por geração</small>
+                            <strong id="subscriptionDuration">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="subscription-detail">
+                        <span class="material-icons">music_video</span>
+                        <div>
+                            <small>Músicas utilizadas</small>
+                            <strong id="subscriptionSongsUsed">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="subscription-detail">
+                        <span class="material-icons">event_available</span>
+                        <div>
+                            <small>Início do plano</small>
+                            <strong id="subscriptionStartDate">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="subscription-detail">
+                        <span class="material-icons">event_busy</span>
+                        <div>
+                            <small>Fim do plano</small>
+                            <strong id="subscriptionEndDate">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="subscription-detail">
+                        <span class="material-icons">payments</span>
+                        <div>
+                            <small>Estado do pagamento</small>
+                            <strong id="subscriptionPaymentStatus">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="subscription-detail">
+                        <span class="material-icons">autorenew</span>
+                        <div>
+                            <small>Próxima renovação</small>
+                            <strong id="subscriptionRenewalDate">—</strong>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="subscription-progress">
+
+                    <div class="subscription-progress-header">
+                        <span>Utilização do plano</span>
+                        <strong id="subscriptionUsageText">A aguardar dados...</strong>
+                    </div>
+
+                    <div
+                        class="subscription-progress-track"
+                        role="progressbar"
+                        aria-label="Utilização do plano">
+
+                        <div
+                            class="subscription-progress-bar"
+                            id="subscriptionProgressBar"
+                            style="width: 0%">
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div
+                    class="subscription-notice"
+                    id="subscriptionNotice"
+                    aria-live="polite">
+                    A informação da assinatura será apresentada quando estiver ligada ao sistema de planos.
+                </div>
+
+                <div class="subscription-actions">
+
+                    <a href="pagamentos.html" class="btn btn-primary">
+                        <span class="material-icons">payments</span>
+                        Gerir planos e pagamentos
+                    </a>    
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- COMUNIDADE -->
+        <section class="profile-section" id="comunidade">
+
+            <div class="section-heading">
+                <div>
+                    <h2>A minha comunidade</h2>
+                    <p>Acompanha as músicas que partilhas com outros utilizadores.</p>
+                </div>
+
+                <span class="material-icons section-heading-icon">
+                    groups
+                </span>
+            </div>
+
+            <div class="community-summary">
+
+                <div class="community-summary-card">
+                    <span class="material-icons">library_music</span>
+                    <div>
+                        <small>Publicações</small>
+                        <strong id="communityPublishedCount">0</strong>
+                    </div>
+                </div>
+
+                <div class="community-summary-card">
+                    <span class="material-icons">visibility</span>
+                    <div>
+                        <small>Visualizações</small>
+                        <strong id="communityViewsCount">0</strong>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="community-publications" id="communityPublications">
+
+                <div class="community-empty" id="communityEmptyState">
+
+                    <span class="material-icons">queue_music</span>
+
+                    <h3>Ainda não tens publicações</h3>
+
+                    <p id="communityEmptyMessage">
+                        Quando partilhares músicas na comunidade, elas poderão aparecer aqui.
+                    </p>
+
+                    <a href="index.html" class="btn btn-primary">
+                        <span class="material-icons">add</span>
+                        Criar música
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="community-actions">
+                <a href="comunidade.html" class="btn btn-outline">
+                    <span class="material-icons">groups</span>
+                    Visitar comunidade
+                </a>
+            </div>
+
+        </section>
+
+        <!-- DADOS PESSOAIS -->
+        <section class="profile-section">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Dados pessoais</h2>
+                    <p>Consulta e atualiza as informações do teu perfil.</p>
+                </div>
+
+                <span class="material-icons section-heading-icon">
+                    manage_accounts
+                </span>
+            </div>
+
+            <form id="profileForm">
+
+                <div class="profile-form-grid">
+
+                    <div class="form-group">
+                        <label for="profileName">Nome de utilizador</label>
+
+                        <input
+                            type="text"
+                            id="profileName"
+                            name="name"
+                            placeholder="O teu nome"
+                            maxlength="100"
+                            disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profileEmail">Endereço de e-mail</label>
+
+                        <input
+                            type="email"
+                            id="profileEmail"
+                            name="email"
+                            placeholder="teuemail@exemplo.com"
+                            disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profilePhone">Número de telemóvel</label>
+                        <input
+                            type="tel"
+                            id="profilePhone"
+                            name="telefone"
+                            inputmode="tel"
+                            autocomplete="tel-national"
+                            maxlength="16"
+                            placeholder="923000000"
+                            aria-describedby="profilePhoneHelp"
+                            disabled>
+                        <small id="profilePhoneHelp">Número angolano com 9 dígitos. Também podes usar +244.</small>
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label for="profileBio">Sobre mim</label>
+
+                        <textarea
+                            id="profileBio"
+                            name="bio"
+                            rows="4"
+                            maxlength="1000"
+                            placeholder="Conta um pouco sobre ti e sobre a tua música..."
+                            disabled></textarea>
+
+                        <small>Máximo de 1000 caracteres.</small>
+                    </div>
+
+                </div>
+
+                <div class="profile-form-actions">
+
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        id="cancelProfileEdit"
+                        hidden>
+                        Cancelar
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="saveProfileButton"
+                        hidden>
+                        <span class="material-icons">save</span>
+                        Guardar alterações
+                    </button>
+
+                </div>
+
+                <div
+                    class="profile-form-message"
+                    id="profileFormMessage"
+                    aria-live="polite">
+                </div>
+
+            </form>
+
+        </section>
+
+        <!-- SEGURANÇA -->
+        <section class="profile-section">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Segurança da conta</h2>
+                    <p>Protege o acesso à tua conta StudioMusic.AI.</p>
+                </div>
+
+                <span class="material-icons section-heading-icon">
+                    shield
+                </span>
+            </div>
+
+            <div class="security-option">
+
+                <div class="security-option-info">
+                    <div class="security-option-icon">
+                        <span class="material-icons">lock</span>
+                    </div>
+
+                    <div>
+                        <h3>Palavra-passe</h3>
+                        <p>Solicita a alteração da palavra-passe da tua conta.</p>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    id="changePasswordButton">
+                    Alterar palavra-passe
+                </button>
+
+            </div>
+
+            <div class="security-option">
+
+                <div class="security-option-info">
+                    <div class="security-option-icon">
+                        <span class="material-icons">logout</span>
+                    </div>
+
+                    <div>
+                        <h3>Terminar sessão</h3>
+                        <p>Sai da tua conta neste dispositivo.</p>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-danger-outline"
+                    id="profileLogoutBottom">
+                    Terminar sessão
+                </button>
+
+            </div>
+
+        </section>
+
+        <!-- RODAPÉ -->
+        <footer class="profile-footer">
+            <p>© 2026 StudioMusic.AI — A tua música, a tua criatividade.</p>
+        </footer>
+
+    </div>
+
+</main>
+
+<!-- JAVASCRIPT EXTERNO -->
+<script src="perfil.js"></script>
+
+</body>
+</html>
