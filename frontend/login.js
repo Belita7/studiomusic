@@ -9,7 +9,7 @@
 // CONFIGURAÇÃO
 // ============================================================
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://studiomusic.onrender.com";
 
 const LOGIN_ENDPOINT = `${API_BASE_URL}/auth/login`;
 const PROFILE_ENDPOINT = `${API_BASE_URL}/auth/me`;
