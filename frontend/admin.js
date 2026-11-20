@@ -5,7 +5,7 @@
    Compatível com o admin.html adaptado
    ========================================================= */
 
-const ADMIN_API = "http://127.0.0.1:8000";
+const ADMIN_API = "https://studiomusic.onrender.com";
 
 const $ = id => document.getElementById(id);
 
