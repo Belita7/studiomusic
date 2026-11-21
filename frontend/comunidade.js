@@ -5,7 +5,7 @@
    Likes: GET /api/community/me/state, POST/DELETE /api/community/{id}/like
 */
 (() => {
-  const API = String(window.STUDIOMUSIC_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+  const API = String(window.STUDIOMUSIC_API_URL || "https://studiomusic.onrender.com").replace(/\/+$/, "");
   const $ = id => document.getElementById(id);
   let songs = [];
   let queue = [];
