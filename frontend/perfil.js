@@ -23,7 +23,7 @@ precisam de ser confirmadas no main.py antes da integração.
 1. CONFIGURAÇÃO
    ============================================================ */
 
-const PROFILE_API = "http://127.0.0.1:8000";
+const PROFILE_API = "https://studiomusic.onrender.com";
 
 const PROFILE_ENDPOINTS = {
 health: "/api/health",
