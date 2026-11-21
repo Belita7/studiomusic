@@ -4,7 +4,7 @@
 
 "use strict";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://studiomusic.onrender.com";
 const PLANS_ENDPOINT = `${API_BASE_URL}/api/plans`;
 const MY_SUB_ENDPOINT = `${API_BASE_URL}/api/subscriptions/me`;
 const PAYMENTS_ENDPOINT = `${API_BASE_URL}/api/payments`;
