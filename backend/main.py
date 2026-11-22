@@ -407,12 +407,8 @@ if APP_ENV == "production":
 else:
 
     CORS_ALLOWED_ORIGINS.extend([
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "http://127.0.0.1:5501",
-        "http://localhost:5501",
-        "http://127.0.0.1:3000",
-        "http://localhost:3000"
+        "https://studiomusic-r63.pages.dev",
+        
     ])
 
 CORS_ALLOWED_ORIGINS = list(
@@ -1827,6 +1823,8 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
     song_id = song["id"]
 
     payload = {"model": data.model or SONGAPI_MODEL, "instrumental": data.instrumental}
+    if data.duration is not None:
+        payload["duration"] = data.duration
     if data.vocal_gender:
         payload["vocal_gender"] = data.vocal_gender
     if data.style:
@@ -1867,11 +1865,11 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
             result = response.json()
         except ValueError:
             result = {"message": response.text[:1000]}
-        if response.status_code != 202:
+        if response.status_code not in {200, 201, 202}:
             update_song(song_id=song_id, status="failed", error_message=str(result)[:2000])
             restore_user_credit(credit_lot_id)
             raise HTTPException(status_code=502, detail=f"SongAPI recusou o pedido ({response.status_code}): {result.get('message', result)}")
-        generation_id = result.get("id")
+        generation_id = result.get("id") or result.get("generation_id") or result.get("task_id")
         if not generation_id:
             update_song(song_id=song_id, status="failed", error_message="Resposta SongAPI sem ID de geração.")
             restore_user_credit(credit_lot_id)
@@ -1906,17 +1904,23 @@ def get_music_generation_status(song_id: int, user=Depends(get_current_user)):
     except requests.RequestException:
         raise HTTPException(status_code=502, detail="Não foi possível consultar o estado na SongAPI.")
 
-    state = result.get("status")
+    state = str(result.get("status") or "processing").strip().lower()
     clips = result.get("clips") or []
-    clips_payload = [{k: c.get(k) for k in ("id", "audio_url", "image_url", "duration_secs", "lyrics", "tags", "title")} for c in clips]
+    clips_payload = [{k: c.get(k) for k in ("id", "audio_url", "image_url", "duration_secs", "lyrics", "tags", "title")} for c in clips if isinstance(c, dict)]
     gen_json = json.loads(song.get("generation_json") or "{}")
     gen_json["result"] = result
     changes = {"generation_json": json.dumps(gen_json)}
-    if state == "complete":
-        first = clips[0] if clips else {}
-        changes.update(status="completed", audio_url=first.get("audio_url") or result.get("audio_url"), cover_url=first.get("image_url"))
-    elif state == "failed":
-        changes.update(status="failed", error_message=result.get("error") or "A geração falhou.")
+    if state in {"complete", "completed", "succeeded", "success"}:
+        first = clips[0] if clips and isinstance(clips[0], dict) else {}
+        audio_url = first.get("audio_url") or result.get("audio_url") or result.get("url")
+        if audio_url:
+            changes.update(status="completed", audio_url=audio_url, cover_url=first.get("image_url") or result.get("image_url"))
+        else:
+            # Provider may mark complete before publishing the clip URL.
+            state = "processing"
+    elif state in {"failed", "error", "cancelled", "canceled"}:
+        failure_message = str(result.get("error") or result.get("message") or "A geração falhou no serviço de música.")[:1000]
+        changes.update(status="failed", error_message=failure_message)
         if not gen_json.get("credit_restored"):
             credit_lot_id = gen_json.get("credit_lot_id")
             if credit_lot_id:
@@ -1928,6 +1932,8 @@ def get_music_generation_status(song_id: int, user=Depends(get_current_user)):
     serialized = serialize_song(refreshed, user=user)
     serialized["clips"] = clips_payload
     serialized["generation_status"] = state
+    if state in {"failed", "error", "cancelled", "canceled"}:
+        serialized["generation_error"] = str(result.get("error") or result.get("message") or "A geração falhou.")[:1000]
     return serialized
 
 
