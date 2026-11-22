@@ -497,177 +497,136 @@ async function generateMusic() {
     const title = titleInput?.value.trim() || "";
     const durationValue = durationInput?.value || "";
     const instrumental = instrumentalInput?.checked || false;
-
-    /*
-       CORREÇÃO:
-       getLyrics() não recebe argumentos.
-       A letra agora é incluída no pedido enviado ao backend.
-    */
     const lyrics = getLyrics();
 
     if (!promptInput) {
         showToast("Campo de descrição da música não encontrado.", "error");
         return;
     }
-
     if (!prompt) {
         showToast("Descreve primeiro a música que desejas criar.", "warning");
         promptInput.focus();
         return;
     }
-
     if (prompt.length > MAX_PROMPT_LENGTH) {
-        showToast(
-            `O prompt não pode ultrapassar ${MAX_PROMPT_LENGTH} caracteres.`,
-            "warning"
-        );
+        showToast(`O prompt não pode ultrapassar ${MAX_PROMPT_LENGTH} caracteres.`, "warning");
         return;
     }
-
     if (lyrics.length > MAX_LYRICS_LENGTH) {
-        showToast(
-            `A letra não pode ultrapassar ${MAX_LYRICS_LENGTH} caracteres.`,
-            "warning"
-        );
+        showToast(`A letra não pode ultrapassar ${MAX_LYRICS_LENGTH} caracteres.`, "warning");
         return;
     }
 
-    const duration = durationValue
-        ? Number(durationValue)
-        : null;
+    const duration = durationValue ? Number(durationValue) : null;
+    if (duration !== null && (!Number.isFinite(duration) || duration <= 0 || !Number.isInteger(duration))) {
+        showToast("A duração indicada deve ser um número inteiro de segundos válido.", "warning");
+        return;
+    }
 
-    if (
-        duration !== null &&
-        (!Number.isFinite(duration) || duration <= 0)
-    ) {
-        showToast("A duração indicada não é válida.", "warning");
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        showToast("A tua sessão expirou. Inicia sessão novamente.", "error");
+        window.location.href = "login.html";
         return;
     }
 
     setGenerateButtonLoading(true);
     hidePlayer();
-
-    showGenerationStatus(
-        "A gerar a tua música...",
-        "A inteligência artificial está a criar a música. Aguarda.",
-        true
-    );
+    showGenerationStatus("A enviar pedido...", "A preparar a geração da tua música.", true);
 
     try {
-        const token = localStorage.getItem("access_token");
-
-        const headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        };
-
-        if (token) {
-            headers.Authorization = `Bearer ${token}`;
-        }
-
-        const response = await fetch(
-            `${API_BASE_URL}/api/music/generate`,
-            {
-                method: "POST",
-                headers,
-                body: JSON.stringify({
-                    prompt,
-                    title: title || null,
-                    duration,
-                    instrumental,
-                    lyrics
-                })
-            }
-        );
-
+        const response = await fetch(`${API_BASE_URL}/api/music/generate`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ prompt, title: title || null, duration, instrumental, lyrics })
+        });
         const data = await parseResponse(response);
 
         if (!response.ok) {
-            throw new Error(
-                getErrorMessage(data, `Erro HTTP ${response.status}`)
-            );
+            throw new Error(getErrorMessage(data, `Erro HTTP ${response.status}`));
         }
-
         if (data?.success === false) {
-            throw new Error(
-                getErrorMessage(data, "A API não conseguiu gerar a música.")
-            );
+            throw new Error(getErrorMessage(data, "A API não conseguiu aceitar o pedido."));
         }
 
-        const audioUrl =
-            data.audio_url ||
-            data.audioUrl ||
-            data.url ||
-            data.file_url ||
-            data.fileUrl ||
-            "";
+        const songId = data.song_id || data.id;
+        if (!songId) {
+            throw new Error(data.message || "O servidor aceitou o pedido, mas não devolveu o ID da música.");
+        }
 
-        const generatedTitle =
-            data.title ||
-            title ||
-            "Minha música StudioMusic.AI";
+        showGenerationStatus(
+            "A música está a ser criada...",
+            "O pedido foi aceite. Isto pode demorar alguns minutos; não feches esta página.",
+            true
+        );
+
+        const completedSong = await waitForMusicGeneration(songId, token);
+        const audioUrl = completedSong.audio_url || completedSong.audioUrl || completedSong.url ||
+            completedSong.file_url || completedSong.fileUrl || completedSong.clips?.[0]?.audio_url || "";
 
         if (!audioUrl) {
-            showGenerationStatus(
-                "Solicitação concluída",
-                data.message ||
-                    "O servidor não devolveu um endereço de áudio.",
-                true
-            );
-
-            showToast("A API não retornou o áudio.", "warning");
-            return;
+            throw new Error("A geração terminou, mas o servidor ainda não disponibilizou o áudio.");
         }
 
+        const generatedTitle = completedSong.title || title || "Minha música StudioMusic.AI";
         const finalAudioUrl = resolveAudioUrl(audioUrl);
-
-        showGenerationStatus(
-            "Música criada com sucesso!",
-            "A tua música está pronta para reprodução.",
-            true
-        );
-
+        showGenerationStatus("Música criada com sucesso!", "A tua música está pronta para reprodução.", true);
         showToast("Música criada com sucesso!", "success");
-
-        showPlayer(
-            generatedTitle,
-            finalAudioUrl,
-            data.duration || duration
-        );
-
+        showPlayer(generatedTitle, finalAudioUrl, completedSong.duration || duration);
         addToHistory(generatedTitle, finalAudioUrl);
-
-        if (data.id || data.song_id) {
-            await saveSongToHistory(data.id || data.song_id);
+        if (completedSong.id || songId) {
+            await saveSongToHistory(completedSong.id || songId);
         }
-
         await loadSongs(true);
-
-   
     } catch (error) {
         console.error("Erro ao gerar música:", error);
-
-        let message = error.message || "Não foi possível gerar a música.";
-
-        if (error instanceof TypeError) {
-            message =
-                "Não foi possível comunicar com o servidor de geração musical. " +
-                "Verifica a ligação à API, as permissões CORS e os logs do Render.";
-        }
-
-        showGenerationStatus(
-            "Erro ao gerar música",
-            message,
-            true
-        );
-
+        const message = error.message || "Não foi possível gerar a música.";
+        showGenerationStatus("Erro ao gerar música", message, true);
         showToast(message, "error");
-
     } finally {
         setGenerateButtonLoading(false);
     }
 }
 
+async function waitForMusicGeneration(songId, token) {
+    const pollIntervalMs = 5000;
+    const maxWaitMs = 12 * 60 * 1000;
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt < maxWaitMs) {
+        await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+        const response = await fetch(`${API_BASE_URL}/api/music/${encodeURIComponent(songId)}/status`, {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+                "Accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            }
+        });
+        const data = await parseResponse(response);
+        if (!response.ok) {
+            throw new Error(getErrorMessage(data, `Não foi possível consultar a geração (HTTP ${response.status}).`));
+        }
+
+        const state = String(data.generation_status || data.status || "pending").toLowerCase();
+        if (["completed", "complete", "succeeded", "success"].includes(state)) {
+            return data;
+        }
+        if (["failed", "error", "cancelled", "canceled"].includes(state)) {
+            throw new Error(data.generation_error || data.error || data.message || "A geração da música falhou no serviço de música.");
+        }
+        showGenerationStatus(
+            "A música está a ser criada...",
+            "A geração continua em processamento. Aguarda, por favor.",
+            true
+        );
+    }
+    throw new Error("A geração está a demorar mais do que o esperado. A música pode continuar a ser processada; consulta Minhas músicas mais tarde.");
+}
 /* ============================================================
    PLAYER
    ============================================================ */
