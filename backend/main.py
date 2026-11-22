@@ -308,6 +308,11 @@ PADDLE_API_BASE = (
 SONGAPI_API_KEY = os.getenv("SONGAPI_API_KEY", "").strip()
 SONGAPI_BASE_URL = os.getenv("SONGAPI_BASE_URL", "https://api.songapi.dev").strip().rstrip("/")
 SONGAPI_MODEL = os.getenv("SONGAPI_MODEL", "v5").strip()
+SONGAPI_WEBHOOK_SECRET = os.getenv("SONGAPI_WEBHOOK_SECRET", "").strip()
+SONGAPI_WEBHOOK_URL = os.getenv(
+    "SONGAPI_WEBHOOK_URL",
+    "https://studiomusic.onrender.com/api/webhooks/songapi"
+).strip()
 PUBLIC_API_BASE_URL = os.getenv("PUBLIC_API_BASE_URL", "").strip().rstrip("/")
 SOURCE_AUDIO_DIR = BASE_DIR / "source_audio"
 SOURCE_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
@@ -386,6 +391,10 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
+# Cloudflare Pages production frontend.
+if "https://studiomusic-r63.pages.dev" not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append("https://studiomusic-r63.pages.dev")
+
 if APP_ENV == "production":
 
     if not CORS_ALLOWED_ORIGINS:
@@ -411,6 +420,9 @@ else:
         
     ])
 
+if "https://studiomusic-r63.pages.dev" not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append("https://studiomusic-r63.pages.dev")
+
 CORS_ALLOWED_ORIGINS = list(
     dict.fromkeys(CORS_ALLOWED_ORIGINS)
 )
@@ -432,7 +444,9 @@ app.add_middleware(
         "Content-Type",
         "Accept",
         "X-Request-ID",
-        "X-Integrity-Token"
+        "X-Integrity-Token",
+        "Origin",
+        "Cache-Control"
     ]
 )
 
@@ -1823,6 +1837,7 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
     song_id = song["id"]
 
     payload = {"model": data.model or SONGAPI_MODEL, "instrumental": data.instrumental}
+    payload["webhook_url"] = SONGAPI_WEBHOOK_URL
     if data.duration is not None:
         payload["duration"] = data.duration
     if data.vocal_gender:
@@ -1882,6 +1897,198 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
         update_song(song_id=song_id, status="failed", error_message=str(exc)[:2000])
         restore_user_credit(credit_lot_id)
         raise HTTPException(status_code=502, detail="Não foi possível comunicar com a SongAPI.")
+
+
+
+# ============================================================
+# MINHAS MÚSICAS E FAVORITOS — ROTAS ESTÁTICAS
+# Devem ficar antes de /api/music/{song_id}, pois "favorites"
+# seria interpretado como song_id e causaria erro 422.
+# ============================================================
+
+@app.get("/api/music")
+def list_user_music(user=Depends(get_current_user)):
+    songs = get_songs() or []
+    owned_songs = [
+        song for song in songs
+        if isinstance(song, dict)
+        and song.get("user_id") is not None
+        and int(song.get("user_id")) == int(user["id"])
+    ]
+    owned_songs.sort(
+        key=lambda item: str(item.get("created_at") or ""),
+        reverse=True
+    )
+    return [serialize_song(song, user=user) for song in owned_songs]
+
+
+@app.get("/api/music/favorites")
+def list_user_favorites(user=Depends(get_current_user)):
+    favorite_items = get_favorites(user["id"]) or []
+    result = []
+
+    for item in favorite_items:
+        if not isinstance(item, dict):
+            continue
+
+        # DB implementations may return a joined song or a favorite row.
+        nested_song = item.get("song") or item.get("music")
+        if isinstance(nested_song, dict):
+            song = nested_song
+        else:
+            song_id = item.get("song_id") or item.get("music_id") or item.get("id")
+            try:
+                song = get_song(int(song_id)) if song_id is not None else None
+            except (TypeError, ValueError):
+                song = None
+            if song is None and item.get("title"):
+                song = item
+
+        if song:
+            result.append(serialize_song(song, user=user))
+
+    return result
+
+
+
+# ============================================================
+# SONGAPI WEBHOOK
+# Recebe os eventos generation.complete / generation.failed.
+# ============================================================
+
+@app.post("/api/webhooks/songapi")
+async def songapi_webhook(request: Request):
+    if not SONGAPI_WEBHOOK_SECRET:
+        logger.error("SONGAPI_WEBHOOK_SECRET não configurado.")
+        raise HTTPException(status_code=500, detail="Webhook SongAPI não configurado.")
+
+    raw_body = await request.body()
+    signature_header = request.headers.get("songapi-signature", "")
+    try:
+        parts = dict(
+            piece.strip().split("=", 1)
+            for piece in signature_header.split(",")
+            if "=" in piece
+        )
+        timestamp = parts["t"]
+        received_signature = parts["v1"]
+
+        if abs(time.time() - int(timestamp)) > 300:
+            raise HTTPException(status_code=401, detail="Assinatura webhook expirada.")
+
+        signed_payload = timestamp.encode("utf-8") + b"." + raw_body
+        expected_signature = hmac.new(
+            SONGAPI_WEBHOOK_SECRET.encode("utf-8"),
+            signed_payload,
+            hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(
+            expected_signature,
+            received_signature
+        ):
+            raise HTTPException(status_code=401, detail="Assinatura webhook inválida.")
+    except HTTPException:
+        raise
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="Formato de assinatura webhook inválido.")
+
+    try:
+        event = json.loads(raw_body)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="JSON webhook inválido.")
+
+    event_type = str(event.get("type") or "").lower()
+    generation = (
+        (event.get("data") or {}).get("generation")
+        or event.get("generation")
+        or event.get("data")
+        or {}
+    )
+    if not isinstance(generation, dict):
+        raise HTTPException(status_code=400, detail="Dados da geração inválidos.")
+
+    generation_id = generation.get("id") or generation.get("generation_id")
+    if not generation_id:
+        raise HTTPException(status_code=400, detail="ID da geração ausente.")
+
+    # Locate the local song by the provider's generation/task ID.
+    all_songs = get_songs() or []
+    song = next(
+        (
+            item for item in all_songs
+            if isinstance(item, dict)
+            and str(item.get("task_id") or "") == str(generation_id)
+        ),
+        None
+    )
+    if not song:
+        # Acknowledge unknown events to avoid endless provider retries.
+        logger.warning("SongAPI webhook para geração não associada: %s", generation_id)
+        return {"received": True, "matched": False}
+
+    song_id = int(song["id"])
+    generation_json = {}
+    try:
+        generation_json = json.loads(song.get("generation_json") or "{}")
+    except (TypeError, ValueError):
+        generation_json = {}
+    generation_json["result"] = generation
+    generation_json["webhook_event"] = event_type
+
+    state = str(generation.get("status") or "").lower()
+    clips = generation.get("clips") or []
+    first_clip = clips[0] if clips and isinstance(clips[0], dict) else {}
+    audio_url = (
+        first_clip.get("audio_url")
+        or generation.get("audio_url")
+        or generation.get("url")
+    )
+    cover_url = first_clip.get("image_url") or generation.get("image_url")
+
+    if event_type == "generation.complete" or state in {"complete", "completed", "success", "succeeded"}:
+        if audio_url:
+            update_song(
+                song_id=song_id,
+                status="completed",
+                audio_url=audio_url,
+                cover_url=cover_url,
+                generation_json=json.dumps(generation_json)
+            )
+        else:
+            logger.warning("SongAPI marcou completo sem audio_url para song_id=%s", song_id)
+            update_song(
+                song_id=song_id,
+                generation_json=json.dumps(generation_json)
+            )
+    elif event_type == "generation.failed" or state in {"failed", "error", "cancelled", "canceled"}:
+        failure = str(
+            generation.get("error")
+            or generation.get("message")
+            or "A geração falhou na SongAPI."
+        )[:1000]
+        update_song(
+            song_id=song_id,
+            status="failed",
+            error_message=failure,
+            generation_json=json.dumps(generation_json)
+        )
+        if not generation_json.get("credit_restored"):
+            credit_lot_id = generation_json.get("credit_lot_id")
+            if credit_lot_id:
+                restore_user_credit(credit_lot_id)
+            generation_json["credit_restored"] = True
+            update_song(
+                song_id=song_id,
+                generation_json=json.dumps(generation_json)
+            )
+    else:
+        update_song(
+            song_id=song_id,
+            generation_json=json.dumps(generation_json)
+        )
+
+    return {"received": True, "matched": True}
 
 
 @app.get("/api/music/{song_id}/status")
