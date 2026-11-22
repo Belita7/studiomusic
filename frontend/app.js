@@ -584,7 +584,9 @@ async function generateMusic() {
         await loadSongs(true);
     } catch (error) {
         console.error("Erro ao gerar música:", error);
-        const message = error.message || "Não foi possível gerar a música.";
+        const message = error instanceof TypeError && error.message === "Failed to fetch"
+            ? "Não foi possível contactar o backend. Verifica o CORS_ALLOWED_ORIGINS no Render e confirma se o serviço está Live."
+            : (error.message || "Não foi possível gerar a música.");
         showGenerationStatus("Erro ao gerar música", message, true);
         showToast(message, "error");
     } finally {
