@@ -643,6 +643,7 @@ async function generateMusic() {
 
         await loadSongs(true);
 
+   
     } catch (error) {
         console.error("Erro ao gerar música:", error);
 
@@ -650,18 +651,22 @@ async function generateMusic() {
 
         if (error instanceof TypeError) {
             message =
-                "Não foi possível ligar ao servidor FastAPI. " +
-                "Confirma se está a funcionar em http://127.0.0.1:8000.";
+                "Não foi possível comunicar com o servidor de geração musical. " +
+                "Verifica a ligação à API, as permissões CORS e os logs do Render.";
         }
 
-        showGenerationStatus("Erro ao gerar música", message, true);
+        showGenerationStatus(
+            "Erro ao gerar música",
+            message,
+            true
+        );
+
         showToast(message, "error");
 
     } finally {
         setGenerateButtonLoading(false);
     }
 }
-
 
 /* ============================================================
    PLAYER
