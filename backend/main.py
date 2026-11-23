@@ -379,28 +379,28 @@ app.mount("/avatars",
     name="avatars"
 )
 # ============================================================
-# CORS — CONFIGURAÇÃO SEGURA
+# CORS — CONFIGURAÇÃO
 # ============================================================
 
+# Lê as origens permitidas no Render/.env e normaliza os valores.
 CORS_ALLOWED_ORIGINS = [
     origin.strip().rstrip("/")
-    for origin in os.getenv(
-        "CORS_ALLOWED_ORIGINS",
-        ""
-    ).split(",")
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
     if origin.strip()
 ]
 
-# Cloudflare Pages production frontend.
-if "https://studiomusic-r63.pages.dev" not in CORS_ALLOWED_ORIGINS:
-    CORS_ALLOWED_ORIGINS.append("https://studiomusic-r63.pages.dev")
+# Frontend oficial do StudioMusic.AI no Cloudflare Pages.
+FRONTEND_ORIGIN = "https://studiomusic-r63.pages.dev"
+if FRONTEND_ORIGIN not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_ORIGIN)
+
+# Remove duplicados sem alterar a ordem.
+CORS_ALLOWED_ORIGINS = list(dict.fromkeys(CORS_ALLOWED_ORIGINS))
 
 if APP_ENV == "production":
-
     if not CORS_ALLOWED_ORIGINS:
         raise RuntimeError(
-            "Configure CORS_ALLOWED_ORIGINS "
-            "antes de iniciar em produção."
+            "Configure CORS_ALLOWED_ORIGINS antes de iniciar em produção."
         )
 
     if "*" in CORS_ALLOWED_ORIGINS:
@@ -413,41 +413,12 @@ if APP_ENV == "production":
             "A origem null não é permitida em produção."
         )
 
-else:
-
-    CORS_ALLOWED_ORIGINS.extend([
-        "https://studiomusic-r63.pages.dev",
-        
-    ])
-
-if "https://studiomusic-r63.pages.dev" not in CORS_ALLOWED_ORIGINS:
-    CORS_ALLOWED_ORIGINS.append("https://studiomusic-r63.pages.dev")
-
-CORS_ALLOWED_ORIGINS = list(
-    dict.fromkeys(CORS_ALLOWED_ORIGINS)
-)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=[
-        "GET",
-        "POST",
-        "PATCH",
-        "PUT",
-        "DELETE",
-        "OPTIONS"
-    ],
-    allow_headers=[
-        "Authorization",
-        "Content-Type",
-        "Accept",
-        "X-Request-ID",
-        "X-Integrity-Token",
-        "Origin",
-        "Cache-Control"
-    ]
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ============================================================
