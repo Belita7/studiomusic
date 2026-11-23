@@ -155,14 +155,14 @@ def rows_to_dict(rows):
 
 def init_database():
     """Apply the PostgreSQL schema once and ensure compatibility columns exist."""
-    schema_path = BASE_DIR / "studiomusic_postgresql_schema.sql"
+    schema_path = BASE_DIR / "studiomusic.sql"
     with get_connection() as connection:
         cur = connection.cursor()
         cur.execute("SELECT to_regclass('public.users') AS table_name")
         exists = cur.fetchone()["table_name"]
         if not exists:
             if not schema_path.exists():
-                raise RuntimeError("Schema PostgreSQL não encontrado: studiomusic_postgresql_schema.sql")
+                raise RuntimeError("Schema PostgreSQL não encontrado: studiomusic.sql")
             # Execute the reviewed DDL as one PostgreSQL script.
             cur.execute(schema_path.read_text(encoding="utf-8"))
         # Compatibility with fields referenced by the existing Paddle/BitPay code.
