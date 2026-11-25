@@ -809,7 +809,7 @@ def update_user_photo(
 def create_song(
     title: str,
     prompt: str,
-    model: str = "stable-audio-2.5",
+    model: str = "mureka-9.5",
     duration: int = 60,
     instrumental: bool = False,
     status: str = "pending",
