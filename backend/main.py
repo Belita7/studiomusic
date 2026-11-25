@@ -1312,6 +1312,8 @@ def bootstrap_first_admin(
         raise HTTPException(status_code=403, detail="Email não corresponde ao ADMIN_BOOTSTRAP_EMAIL configurado.")
     user = get_user_by_email(email)
     if user:
+        if not verify_password(data.password, user.get("password_hash", "")):
+            raise HTTPException(status_code=401, detail="A conta já existe. Usa a palavra-passe dessa conta para a promover a administrador.")
         with get_connection() as connection:
             cursor = connection.cursor()
             cursor.execute("UPDATE users SET is_admin = 1, is_active = 1 WHERE id = ?", (user["id"],))
