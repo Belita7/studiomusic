@@ -2138,3 +2138,11 @@ select option {
         transition-duration: 0.01ms !important;
     }
 }
+/* P2P payment interface (additive; existing styles untouched) */
+.pay-card{background:var(--card-bg);border:1px solid var(--border-light);border-radius:16px;padding:24px;margin:18px 0}
+.pay-status{white-space:pre-wrap;padding:12px;border-radius:10px;background:#0c0f15;margin:12px 0}
+.pay-status.hidden{display:none!important}
+.pay-table{width:100%;border-collapse:collapse;display:block;overflow-x:auto}
+.pay-table td,.pay-table th{padding:10px;border-bottom:1px solid var(--border-light);text-align:left;vertical-align:top}
+.pay-table button{margin:3px}
+.pay-proof-input{max-width:230px}
