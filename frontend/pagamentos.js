@@ -984,9 +984,11 @@ function renderPaymentHistory(payments) {
             "—";
 
         const method =
-            payment.payment_provider ||
-            payment.payment_method ||
-            "—";
+            translatePaymentMethod(
+                payment.payment_method ||
+                payment.payment_provider ||
+                "—"
+            );
 
         const amount =
             payment.amount ??
@@ -1020,6 +1022,21 @@ function renderPaymentHistory(payments) {
 
         elements.paymentsHistory.appendChild(row);
     });
+}
+
+
+function translatePaymentMethod(method) {
+    const labels = {
+        bank_transfer: "Transferência bancária",
+        unifi_transfer: "Transferência internacional UniFi",
+        multicaixa_express: "Multicaixa Express",
+        multicaixa_reference: "Referência Multicaixa",
+        usdc: "USDC",
+        paddle: "Paddle / Cartão",
+        card: "Cartão",
+        bitpay: "BitPay Angola"
+    };
+    return labels[String(method || "").toLowerCase()] || method || "—";
 }
 
 
