@@ -3237,11 +3237,8 @@ async function loadP2PPaymentPage() {
         if (methodSelect) methodSelect.innerHTML = '<option value="">Seleccione um método</option>' + p2pMethods.map(m=>`<option value="${p2pEscape(m.id)}">${p2pEscape(m.label)}</option>`).join("");
         renderP2PMethodDetails();
         await loadP2PMyPayments();
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        if (user.is_admin || user.isAdmin || user.role === "admin") {
-            document.getElementById("p2pAdminPanel")?.classList.remove("hidden");
-            await loadP2PAdminPayments();
-        }
+        // Tenta carregar a lista administrativa; só administradores recebem 200.
+        await loadP2PAdminPayments();
         if (status) status.textContent = p2pMethods.length ? "" : "Os métodos P2P ainda não foram configurados pelo administrador.";
     } catch (error) {
         if (status) status.textContent = error.message || "Erro ao carregar pagamentos.";
@@ -3278,6 +3275,7 @@ async function createP2PPayment() {
         if(!response.ok)throw new Error(data.detail||"Não foi possível criar o pedido.");
         let message=`Pedido #${data.payment_id} criado. Estado: pendente.\nValor: ${data.amount} ${data.currency}.`;
         if(data.crypto_amount)message+=`\nEnviar ${data.crypto_amount} USDC na rede ${data.network} para ${data.wallet_address}.`;
+        if(data.transfer_amount_usd)message+=`\nTransferir ${data.transfer_amount_usd} USD (taxa configurada: ${data.aoa_per_usd} AOA/USD).`;
         message+="\nEnvie o pagamento e submeta o comprovativo abaixo. A ativação só ocorre após verificação.";
         if(status)status.textContent=message;
         await loadP2PMyPayments();
@@ -3312,8 +3310,9 @@ async function loadP2PAdminPayments() {
     try{
         const response=await fetch(`${API_BASE_URL}/api/admin/payments?status=pending`,{headers:p2pAuthHeaders()});
         const data=await response.json();if(!response.ok)throw new Error(data.detail||"Não foi possível carregar pagamentos administrativos.");
-        const rows=data.payments||[];
-        if(!rows.length){host.textContent="Não há pagamentos pendentes.";return;}
+        const rows=(data.payments||[]).filter(p=>["bank_transfer","unifi_transfer","multicaixa_express","usdc"].includes(p.payment_method));
+        document.getElementById("p2pAdminPanel")?.classList.remove("hidden");
+        if(!rows.length){host.textContent="Não há pagamentos P2P pendentes.";return;}
         host.innerHTML='<table class="pay-table"><thead><tr><th>Utilizador</th><th>Plano</th><th>Método</th><th>Valor</th><th>Referência</th><th>Comprovativo</th><th>Acção</th></tr></thead><tbody>'+rows.map(p=>`<tr><td>${p2pEscape(p.user_name)}<br><small>${p2pEscape(p.user_email)}</small></td><td>${p2pEscape(p.plan_name)}</td><td>${p2pEscape(p2pMethodLabel(p.payment_method))}</td><td>${p2pEscape(p.amount)} ${p2pEscape(p.currency||"AOA")}</td><td>${p2pEscape(p.transaction_reference||"—")}</td><td>${p.proof_file?`<button class="secondary-button" onclick="downloadP2PProof(${p.id})">Ver comprovativo</button>`:"Não enviado"}</td><td><button class="primary-button" onclick="reviewP2PPayment(${p.id},'confirmed')">Confirmar</button><button class="secondary-button" onclick="reviewP2PPayment(${p.id},'rejected')">Rejeitar</button></td></tr>`).join("")+"</tbody></table>";
     }catch(error){host.textContent=error.message||"Erro no painel administrativo.";}
 }
