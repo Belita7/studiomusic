@@ -104,12 +104,10 @@
                 </a>
             </div>
 
-            <div class="community-actions">
-                <a href="pagamentos.html" class="btn btn-outline">
-                    <span class="material-icons">payments</span>
-                    Pagamentos
-                </a>
-            </div>
+            <button type="button" class="nav-item" data-page="pagamentos" onclick="showPage('pagamentos'); closeSidebar();">
+                <span class="material-icons">payments</span>
+                <span>Pagamentos</span>
+            </button>
 
             
         </nav>
@@ -611,6 +609,23 @@
             <!-- =================================================
                  PÁGINA: HISTÓRICO
             ================================================== -->
+            <section id="page-pagamentos" class="page">
+                <div class="page-header"><div><h1>Pagamentos</h1><p>Compra de planos e pagamentos P2P</p></div></div>
+                <div class="pay-card">
+                    <p class="field-help">P2P fica pendente até o administrador confirmar o recebimento. Nunca introduza dados do cartão Visa, CVV ou validade.</p>
+                    <div class="form-grid">
+                        <div class="form-group"><label for="p2pPlan">Plano</label><select id="p2pPlan"><option>A carregar planos...</option></select></div>
+                        <div class="form-group"><label for="p2pMethod">Método de pagamento</label><select id="p2pMethod"><option>A carregar métodos...</option></select></div>
+                    </div>
+                    <div id="p2pMethodDetails" class="pay-status hidden"></div>
+                    <div id="p2pUsdcDetails" class="pay-status hidden"></div>
+                    <div class="form-group"><label for="p2pReference">Referência da transação (opcional)</label><input id="p2pReference" type="text" maxlength="200" placeholder="ID / referência da transferência"></div>
+                    <button id="p2pCreate" class="primary-button" type="button">Criar pedido P2P</button>
+                    <div id="p2pStatus" class="pay-status" aria-live="polite"></div>
+                </div>
+                <div class="pay-card"><h2>Os meus pagamentos</h2><div id="p2pMyPayments">A carregar...</div></div>
+                <div id="p2pAdminPanel" class="pay-card hidden"><h2>Gestão administrativa P2P</h2><p class="field-help">Confirma apenas após verificares o recebimento real.</p><div id="p2pAdminPayments">A carregar...</div></div>
+            </section>
             <section
                 id="page-historico"
                 class="page">
