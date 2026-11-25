@@ -310,6 +310,12 @@ PADDLE_API_BASE = (
 MUREKA_API_KEY = os.getenv("MUREKA_API_KEY", "").strip()
 MUREKA_BASE_URL = os.getenv("MUREKA_BASE_URL", "https://api.mureka.ai").strip().rstrip("/")
 MUREKA_MODEL = os.getenv("MUREKA_MODEL", "mureka-9.5").strip()
+# Test mode: strictly limited to an allowlisted account configured in Render.
+MUREKA_TEST_MODE = os.getenv("MUREKA_TEST_MODE", "false").strip().lower() in {"1", "true", "yes", "on"}
+MUREKA_TEST_EMAILS = {email.strip().lower() for email in os.getenv("MUREKA_TEST_EMAILS", "").split(",") if email.strip()}
+MUREKA_TEST_MAX_GENERATIONS = max(1, min(20, int(os.getenv("MUREKA_TEST_MAX_GENERATIONS", "3"))))
+ADMIN_BOOTSTRAP_EMAIL = os.getenv("ADMIN_BOOTSTRAP_EMAIL", "").strip().lower()
+ADMIN_BOOTSTRAP_TOKEN = os.getenv("ADMIN_BOOTSTRAP_TOKEN", "").strip()
 PUBLIC_API_BASE_URL = os.getenv("PUBLIC_API_BASE_URL", "").strip().rstrip("/")
 SOURCE_AUDIO_DIR = BASE_DIR / "source_audio"
 SOURCE_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
@@ -445,6 +451,13 @@ class LoginRequest(BaseModel):
     email: str
 
     password: str
+
+
+class AdminBootstrapRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+    email: str = Field(min_length=3, max_length=255)
+    password: str = Field(min_length=8, max_length=200)
+
 
 class ChangePasswordRequest(BaseModel):
     current_password: str = Field(
@@ -1274,6 +1287,52 @@ def api_config():
 
 
 # ============================================================
+# ADMIN — BOOTSTRAP ÚNICO DO PRIMEIRO ADMINISTRADOR
+# ============================================================
+
+@app.post("/api/admin/bootstrap")
+def bootstrap_first_admin(
+    data: AdminBootstrapRequest,
+    bootstrap_token: Optional[str] = Header(default=None, alias="X-Admin-Bootstrap-Token")
+):
+    """Cria o primeiro administrador com token e email previamente definidos no Render."""
+    if not ADMIN_BOOTSTRAP_EMAIL or len(ADMIN_BOOTSTRAP_TOKEN) < 32:
+        raise HTTPException(status_code=503, detail="Bootstrap administrativo não configurado no servidor.")
+    if not bootstrap_token or not secrets.compare_digest(bootstrap_token, ADMIN_BOOTSTRAP_TOKEN):
+        raise HTTPException(status_code=403, detail="Token de bootstrap inválido.")
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute("SELECT COUNT(*) AS admin_count FROM users WHERE is_admin = 1")
+        row = cursor.fetchone()
+        admin_count = int(row["admin_count"] if isinstance(row, dict) else row[0])
+    if admin_count:
+        raise HTTPException(status_code=409, detail="O administrador inicial já existe. Bootstrap encerrado.")
+    email = data.email.strip().lower()
+    if not secrets.compare_digest(email, ADMIN_BOOTSTRAP_EMAIL):
+        raise HTTPException(status_code=403, detail="Email não corresponde ao ADMIN_BOOTSTRAP_EMAIL configurado.")
+    user = get_user_by_email(email)
+    if user:
+        with get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE users SET is_admin = 1, is_active = 1 WHERE id = ?", (user["id"],))
+            connection.commit()
+        user = get_user_by_id(user["id"])
+    else:
+        user_id = create_user(name=data.name.strip(), email=email, password_hash=hash_password(data.password), is_admin=True)
+        user = get_user_by_id(user_id)
+    token = create_access_token(user)
+    logger.warning("Bootstrap do primeiro administrador concluído.")
+    return {
+        "success": True,
+        "message": "Administrador criado. O bootstrap fica agora encerrado.",
+        "access_token": token,
+        "token": token,
+        "token_type": "bearer",
+        "user": {"id": user["id"], "name": user["name"], "email": user["email"], "is_admin": True}
+    }
+
+
+# ============================================================
 # AUTH — REGISTER
 # ============================================================
 
@@ -1742,6 +1801,11 @@ def get_user_paid_subscription(user_id: int) -> bool:
         return False
 
 
+def is_mureka_test_user(user: dict) -> bool:
+    email = str(user.get("email") or "").strip().lower()
+    return bool(MUREKA_TEST_MODE and email and email in MUREKA_TEST_EMAILS)
+
+
 @app.post("/api/music/upload-source")
 async def upload_source_audio(
     file: UploadFile = File(...),
@@ -1751,8 +1815,8 @@ async def upload_source_audio(
     """Envia o áudio de referência recebido ao backend e à API Mureka."""
     if not MUREKA_API_KEY:
         raise HTTPException(status_code=503, detail="MUREKA_API_KEY não configurada no servidor.")
-    if not get_user_paid_subscription(user["id"]):
-        raise HTTPException(status_code=403, detail="O envio de áudio para geração requer uma subscrição paga activa.")
+    if not get_user_paid_subscription(user["id"]) and not is_mureka_test_user(user):
+        raise HTTPException(status_code=403, detail="O envio de áudio requer uma subscrição paga ou acesso de teste autorizado.")
     if purpose not in {"reference", "instrumental"}:
         raise HTTPException(status_code=400, detail="Finalidade de áudio inválida.")
 
@@ -1850,9 +1914,15 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
     if not MUREKA_API_KEY:
         raise HTTPException(status_code=503, detail="MUREKA_API_KEY não configurada no servidor.")
 
-    # A geração completa é um recurso pago: validar no backend em cada pedido.
-    if not get_user_paid_subscription(user["id"]):
+    # O modo de teste só autoriza emails da allowlist e impõe um limite persistente.
+    test_access = is_mureka_test_user(user)
+    if not get_user_paid_subscription(user["id"]) and not test_access:
         raise HTTPException(status_code=403, detail="A geração completa de músicas requer uma subscrição paga activa.")
+    if test_access:
+        user_songs = get_songs() or []
+        test_count = sum(1 for item in user_songs if isinstance(item, dict) and item.get("user_id") is not None and int(item.get("user_id")) == int(user["id"]))
+        if test_count >= MUREKA_TEST_MAX_GENERATIONS:
+            raise HTTPException(status_code=429, detail=f"Limite de teste atingido ({MUREKA_TEST_MAX_GENERATIONS} gerações).")
 
     prompt = (data.prompt or "").strip()
     lyrics = (data.lyrics or "").strip()
@@ -1912,8 +1982,8 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
             payload["duration"] = max(120, min(300, int(data.duration)))
 
     title = (data.title or "Nova música StudioMusic.AI").strip()[:100]
-    credit_lot_id = consume_user_credit(user["id"])
-    if credit_lot_id is None:
+    credit_lot_id = None if test_access else consume_user_credit(user["id"])
+    if not test_access and credit_lot_id is None:
         available = get_user_credit_balance(user["id"])
         raise HTTPException(status_code=402, detail=f"Créditos insuficientes. Saldo actual: {available}.")
 
@@ -1928,7 +1998,8 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
         )
         song_id = song["id"]
     except Exception as exc:
-        restore_user_credit(credit_lot_id)
+        if credit_lot_id is not None:
+            restore_user_credit(credit_lot_id)
         logger.exception("Could not create local song record")
         raise HTTPException(status_code=500, detail="Não foi possível registar a música. O crédito foi reposto.")
 
@@ -1944,7 +2015,8 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
             result = {"message": response.text[:1000]}
         if response.status_code not in {200, 201, 202}:
             update_song(song_id=song_id, status="failed", error_message=str(result)[:2000])
-            restore_user_credit(credit_lot_id)
+            if credit_lot_id is not None:
+                restore_user_credit(credit_lot_id)
             detail = (result.get("error") or {}).get("message") if isinstance(result.get("error"), dict) else result.get("error")
             detail = detail or result.get("message") or result
             raise HTTPException(status_code=502, detail=f"A Mureka recusou o pedido ({response.status_code}): {detail}")
@@ -1952,7 +2024,8 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
         generation_id = result.get("id") or result.get("task_id") or result.get("generation_id")
         if not generation_id:
             update_song(song_id=song_id, status="failed", error_message="Resposta Mureka sem ID da tarefa.")
-            restore_user_credit(credit_lot_id)
+            if credit_lot_id is not None:
+                restore_user_credit(credit_lot_id)
             raise HTTPException(status_code=502, detail="A Mureka não devolveu o identificador da tarefa.")
         generation_json = {
             "provider": "mureka", "mode": "generate",
@@ -1968,7 +2041,8 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
         raise
     except requests.RequestException as exc:
         update_song(song_id=song_id, status="failed", error_message=str(exc)[:2000])
-        restore_user_credit(credit_lot_id)
+        if credit_lot_id is not None:
+            restore_user_credit(credit_lot_id)
         logger.warning("Mureka generation connection error: %s", exc)
         raise HTTPException(status_code=502, detail="Não foi possível comunicar com a Mureka.")
 
