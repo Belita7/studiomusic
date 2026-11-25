@@ -5,8 +5,8 @@
    StudioMusic.AI
    PAGAMENTOS.JS
 
-   Paddle Sandbox: integração com rota existente.
-   BitPay Angola: preparado para rota FastAPI a implementar.
+   Paddle: checkout internacional através da rota existente.
+   BitPay Angola: checkout local através da rota existente no backend.
 
    A chave secreta BitPay nunca deve chegar ao frontend.
 ============================================================ */
@@ -19,7 +19,6 @@ const PAYMENT_ENDPOINTS = {
     history: "/api/payments/me",
     paddleCheckout: "/api/paddle/checkout",
 
-    // ROTA NOVA A IMPLEMENTAR NO MAIN.PY
     bitpayCheckout: "/api/bitpay/checkout"
 };
 
@@ -75,7 +74,7 @@ const elements = {
 ============================================================ */
 
 function getToken() {
-    return localStorage.getItem("access_token");
+    return localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || localStorage.getItem("token") || sessionStorage.getItem("token");
 }
 
 
@@ -689,7 +688,7 @@ function initializePaddle(data) {
    BITPAY ANGOLA
 
    IMPORTANTE:
-   Esta rota ainda precisa de ser criada no main.py:
+   Rota existente no backend:
 
    POST /api/bitpay/checkout
 
