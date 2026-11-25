@@ -84,7 +84,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updatePromptCounter();
 
-    showPage("criar");
+    // Deep-link support for separate frontend pages (e.g. pagamentos.html).
+    const requestedPage = new URLSearchParams(window.location.search).get("page");
+    const allowedPages = new Set(["criar", "musicas", "favoritos", "comunidade", "historico", "pagamentos"]);
+    showPage(allowedPages.has(requestedPage) ? requestedPage : "criar");
 
     checkAPI();
     loadCurrentUser();
