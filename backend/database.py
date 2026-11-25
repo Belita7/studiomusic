@@ -2269,7 +2269,7 @@ def update_payment_proof(
             WHERE id = ?
               AND user_id = ?
               AND status = 'pending'
-              AND payment_method = 'bank_transfer'
+              AND payment_method IN ('bank_transfer', 'unifi_transfer', 'multicaixa_express', 'usdc')
               AND proof_file IS NULL
         """, (
             proof_file,
