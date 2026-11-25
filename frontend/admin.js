@@ -925,13 +925,13 @@ function renderPayments() {
                 <td>${esc(money(payment.amount))}</td>
 
                 <td>
-                    ${esc(
-                        payment.payment_method === "bank_transfer"
-                            ? "Transferência bancária"
-                            : payment.payment_method === "multicaixa_express"
-                                ? "Multicaixa Express"
-                                : payment.payment_method || "—"
-                    )}
+                    ${esc(({
+                        bank_transfer: "Transferência bancária",
+                        unifi_transfer: "Transferência internacional UniFi",
+                        multicaixa_express: "Multicaixa Express",
+                        usdc: "USDC",
+                        card: "Cartão / Paddle"
+                    })[payment.payment_method] || payment.payment_method || "—")}
                 </td>
 
                 <td>
@@ -1310,8 +1310,10 @@ async function openPaymentProof(payment) {
     const tab = window.open("about:blank", "_blank");
 
     try {
+        // Administrators must use the admin-only proof route; the user route
+        // intentionally permits only the payment owner.
         const blob = await request(
-            `/api/payments/${Number(payment.id)}/proof`,
+            `/api/admin/payments/${Number(payment.id)}/proof`,
             { responseType: "blob" }
         );
 
