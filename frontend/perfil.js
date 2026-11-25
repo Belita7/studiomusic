@@ -1650,7 +1650,9 @@ if (profileElements.saveProfileButton) {
 
 if (profileElements.cancelProfileEdit) {
     profileElements.cancelProfileEdit.hidden = !profileEditMode;
-    profileElements.cancelProfileEdit.style.display = profileEditMode ? "inline-flex": "none";
+    if (profileElements.cancelProfileEdit) {
+        profileElements.cancelProfileEdit.style.display = profileEditMode ? "inline-flex" : "none";
+    }
 }
 //Botão editar
 if (profileElements.editProfileButton) {
@@ -1809,10 +1811,10 @@ async function saveProfile(event) {
     // VALIDAR SOBRE MIM
     // ========================================
 
-    if (sobremim.length > 500) {
+    if (sobremim.length > 1000) {
 
         showMessage(
-            "O campo Sobre mim não pode ultrapassar 500 caracteres.",
+            "O campo Sobre mim não pode ultrapassar 1000 caracteres.",
             "error"
         );
 
@@ -2352,6 +2354,7 @@ const keysToRemove = [
 
 keysToRemove.forEach(key => {
     localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
 });
 
 closeUserDropdown();
