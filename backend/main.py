@@ -311,6 +311,10 @@ PADDLE_API_BASE = (
 P2P_UNIFI_DETAILS = os.getenv("P2P_UNIFI_DETAILS", "").strip()
 P2P_BANK_DETAILS = os.getenv("P2P_BANK_DETAILS", "").strip()
 P2P_MULTICAIXA_DETAILS = os.getenv("P2P_MULTICAIXA_DETAILS", "").strip()
+try:
+    P2P_USD_AOA_RATE = Decimal(os.getenv("P2P_USD_AOA_RATE", "0").strip() or "0")
+except Exception:
+    P2P_USD_AOA_RATE = Decimal("0")
 P2P_USDC_NETWORK = os.getenv("P2P_USDC_NETWORK", "").strip()
 P2P_USDC_WALLET_ADDRESS = os.getenv("P2P_USDC_WALLET_ADDRESS", "").strip()
 try:
@@ -3447,7 +3451,7 @@ def list_plans():
 def p2p_payment_options(user=Depends(get_current_user)):
     methods = []
     if P2P_UNIFI_DETAILS:
-        methods.append({"id": "unifi_transfer", "label": "Transferência internacional UniFi", "details": P2P_UNIFI_DETAILS, "currency": "USD"})
+        methods.append({"id": "unifi_transfer", "label": "Transferência internacional UniFi", "details": P2P_UNIFI_DETAILS, "currency": "USD", "aoa_per_usd": str(P2P_USD_AOA_RATE) if P2P_USD_AOA_RATE > 0 else None})
     if P2P_BANK_DETAILS:
         methods.append({"id": "bank_transfer", "label": "Transferência bancária", "details": P2P_BANK_DETAILS, "currency": "AOA"})
     if P2P_MULTICAIXA_DETAILS:
@@ -3687,6 +3691,12 @@ def create_payment_request(
             "crypto_currency": "USDC",
             "network": P2P_USDC_NETWORK,
             "wallet_address": P2P_USDC_WALLET_ADDRESS
+        })
+    elif payment_method == "unifi_transfer" and P2P_USD_AOA_RATE > 0:
+        response.update({
+            "transfer_amount_usd": str((Decimal(str(amount)) / P2P_USD_AOA_RATE).quantize(Decimal("0.01"))),
+            "transfer_currency": "USD",
+            "aoa_per_usd": str(P2P_USD_AOA_RATE)
         })
     return response
 @app.post("/api/bitpay/checkout")
