@@ -929,8 +929,11 @@ function renderPayments() {
                         bank_transfer: "Transferência bancária",
                         unifi_transfer: "Transferência internacional UniFi",
                         multicaixa_express: "Multicaixa Express",
+                        multicaixa_reference: "Referência Multicaixa",
                         usdc: "USDC",
-                        card: "Cartão / Paddle"
+                        card: "Cartão",
+                        paddle: "Paddle / Cartão",
+                        bitpay: "BitPay Angola"
                     })[payment.payment_method] || payment.payment_method || "—")}
                 </td>
 
