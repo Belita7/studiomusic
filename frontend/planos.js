@@ -8,6 +8,8 @@ const API_BASE_URL = "https://studiomusic.onrender.com";
 const PLANS_ENDPOINT = `${API_BASE_URL}/api/plans`;
 const MY_SUB_ENDPOINT = `${API_BASE_URL}/api/subscriptions/me`;
 const PAYMENTS_ENDPOINT = `${API_BASE_URL}/api/payments`;
+const PAYMENT_OPTIONS_ENDPOINT = `${API_BASE_URL}/api/payments/p2p/options`;
+let configuredPaymentMethods = [];
 
 const plansGrid = document.getElementById("plansGrid");
 const subStatusText = document.getElementById("subStatusText");
@@ -31,6 +33,24 @@ function getToken() {
     return localStorage.getItem("access_token") || localStorage.getItem("token");
 }
 
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[char]));
+}
+
+function renderPaymentMethodHelp() {
+    let help = document.getElementById("paymentMethodHelp");
+    if (!help && paymentMethodSelect) {
+        help = document.createElement("p");
+        help.id = "paymentMethodHelp";
+        help.className = "field-help";
+        paymentMethodSelect.insertAdjacentElement("afterend", help);
+    }
+    const method = configuredPaymentMethods.find(item => item.id === paymentMethodSelect?.value);
+    if (help) help.textContent = method ? [method.details, method.network ? `Rede: ${method.network}` : "", method.wallet_address ? `Carteira: ${method.wallet_address}` : ""].filter(Boolean).join(" | ") : "";
+}
+
 // Mensagens
 function showMessage(text, type = "error") {
     if (!plansMessage) return;
@@ -51,6 +71,8 @@ if (logoutButton) {
     });
 }
 
+if (paymentMethodSelect) paymentMethodSelect.addEventListener("change", renderPaymentMethodHelp);
+
 // Fechar modal
 if (closeModal) {
     closeModal.addEventListener("click", () => paymentModal.style.display = "none");
@@ -67,6 +89,23 @@ async function initPage() {
     }
 
     try {
+        // Carregar métodos P2P configurados no servidor.
+        try {
+            const methodsRes = await fetch(PAYMENT_OPTIONS_ENDPOINT, { headers: { "Authorization": `Bearer ${token}` } });
+            if (methodsRes.ok) {
+                const methodsData = await methodsRes.json();
+                configuredPaymentMethods = Array.isArray(methodsData.methods) ? methodsData.methods : [];
+                if (paymentMethodSelect && configuredPaymentMethods.length) {
+                    paymentMethodSelect.innerHTML = configuredPaymentMethods.map(method =>
+                        `<option value="${escapeHTML(method.id)}">${escapeHTML(method.label)}</option>`
+                    ).join("");
+                    renderPaymentMethodHelp();
+                }
+            }
+        } catch (methodsError) {
+            console.warn("Não foi possível obter métodos P2P; mantém-se o fluxo legado.", methodsError);
+        }
+
         // 1. Carregar subscrição atual
         const subRes = await fetch(MY_SUB_ENDPOINT, {
             headers: { "Authorization": `Bearer ${token}` }
@@ -105,15 +144,15 @@ function renderPlans(plans) {
 
         card.innerHTML = `
             <div>
-                <h3 class="plan-title">${plan.name}</h3>
-                <div class="plan-price">${plan.price.toLocaleString()} <span>${plan.currency} / ${plan.duration_days} dias</span></div>
-                <p class="plan-desc">${plan.description || 'Sem descrição'}</p>
+                <h3 class="plan-title">${escapeHTML(plan.name)}</h3>
+                <div class="plan-price">${Number(plan.price || 0).toLocaleString()} <span>${escapeHTML(plan.currency || "AOA")} / ${Number(plan.duration_days || 0)} dias</span></div>
+                <p class="plan-desc">${escapeHTML(plan.description || "Sem descrição")}</p>
                 <ul class="plan-features">
                     <li><span class="material-icons">check_circle</span> Duração máx. de música: ${plan.max_song_duration}s</li>
                     <li><span class="material-icons">check_circle</span> Limite mensal: ${plan.monthly_song_limit} músicas</li>
                 </ul>
             </div>
-            <button class="btn-submit select-plan-btn" data-id="${plan.id}" data-name="${plan.name}" data-price="${plan.price}">
+            <button class="btn-submit select-plan-btn" data-id="${Number(plan.id)}" data-name="${escapeHTML(plan.name)}" data-price="${Number(plan.price)}">
                 ${isFree ? 'Plano Atual / Gratuito' : 'Submeter Subscrição'}
             </button>
         `;
