@@ -3450,8 +3450,8 @@ def list_plans():
 @app.get("/api/payments/p2p/options")
 def p2p_payment_options(user=Depends(get_current_user)):
     methods = []
-    if P2P_UNIFI_DETAILS:
-        methods.append({"id": "unifi_transfer", "label": "Transferência internacional UniFi", "details": P2P_UNIFI_DETAILS, "currency": "USD", "aoa_per_usd": str(P2P_USD_AOA_RATE) if P2P_USD_AOA_RATE > 0 else None})
+    if P2P_UNIFI_DETAILS and P2P_USD_AOA_RATE > 0:
+        methods.append({"id": "unifi_transfer", "label": "Transferência internacional UniFi", "details": P2P_UNIFI_DETAILS, "currency": "USD", "aoa_per_usd": str(P2P_USD_AOA_RATE)})
     if P2P_BANK_DETAILS:
         methods.append({"id": "bank_transfer", "label": "Transferência bancária", "details": P2P_BANK_DETAILS, "currency": "AOA"})
     if P2P_MULTICAIXA_DETAILS:
@@ -3606,8 +3606,8 @@ def create_payment_request(
             detail="Método de pagamento inválido."
         )
 
-    if payment_method == "unifi_transfer" and not P2P_UNIFI_DETAILS:
-        raise HTTPException(status_code=503, detail="Dados de recebimento UniFi ainda não configurados.")
+    if payment_method == "unifi_transfer" and not (P2P_UNIFI_DETAILS and P2P_USD_AOA_RATE > 0):
+        raise HTTPException(status_code=503, detail="Configure os dados UniFi e a taxa AOA/USD antes de activar este método.")
     if payment_method == "bank_transfer" and not P2P_BANK_DETAILS:
         raise HTTPException(status_code=503, detail="Dados de transferência bancária ainda não configurados.")
     if payment_method == "multicaixa_express" and not P2P_MULTICAIXA_DETAILS:
