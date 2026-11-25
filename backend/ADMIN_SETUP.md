@@ -41,3 +41,24 @@ A geração de teste é desligada por padrão. No Render, configure:
 Apenas emails nesta lista podem gerar sem subscrição e sem consumir créditos. O limite é contado a partir das músicas já registadas para a conta, incluindo tarefas falhadas. O envio de áudio de referência também é permitido a estes emails para testar o fluxo completo. A clonagem vocal continua a exigir subscrição. Desligue o modo de teste e remova os emails autorizados antes de abrir a plataforma ao público.
 
 O modo de teste não altera o acesso dos utilizadores normais nem desactiva a validação de subscrição para contas que não estejam na lista.
+
+
+## Pagamentos P2P adicionais
+
+A página **Pagamentos** foi acrescentada como uma secção separada. O checkout e os webhooks Paddle existentes não foram modificados. Os métodos P2P só aparecem quando os dados correspondentes estiverem configurados no Render.
+
+Configure apenas dados destinados a receber dinheiro — **nunca** número de cartão Visa, CVV ou validade:
+
+- `P2P_UNIFI_DETAILS`: instruções de recebimento internacional UniFi (sem dados de cartão).
+- `P2P_USD_AOA_RATE`: taxa AOA por 1 USD usada para mostrar o valor equivalente de uma transferência UniFi em USD.
+- `P2P_BANK_DETAILS`: dados/instruções de transferência bancária.
+- `P2P_MULTICAIXA_DETAILS`: instruções de recebimento Multicaixa Express.
+- `P2P_USDC_NETWORK`: rede blockchain exacta para receber USDC.
+- `P2P_USDC_WALLET_ADDRESS`: endereço de carteira de recebimento USDC.
+- `P2P_USDC_AOA_RATE`: taxa AOA por 1 USDC, usada para calcular o valor de USDC.
+
+As taxas são definidas pelo administrador e devem ser actualizadas quando necessário. O sistema não consulta automaticamente cotação cambial ou blockchain. USDC só aparece se rede, carteira e taxa estiverem configuradas.
+
+O cliente cria um pedido, pode enviar comprovativo JPG/PNG/PDF (máximo 5 MB) e o pedido permanece pendente. Na secção Pagamentos, o administrador pode descarregar o comprovativo, confirmar ou rejeitar. A confirmação activa o plano através do fluxo de pagamentos já existente. Confirme sempre o recebimento real antes de aprovar.
+
+A lista administrativa P2P filtra os métodos manuais; os pagamentos Paddle não são apresentados nessa lista.
