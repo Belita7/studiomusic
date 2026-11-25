@@ -108,7 +108,6 @@ from database import (
     # SUBSCRIÇÕES
     create_subscription,
     get_user_subscription,
-    get_user_paid_subscription,
     get_user_subscriptions,
 
     # PAGAMENTOS
