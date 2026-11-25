@@ -625,7 +625,7 @@ try {
 
     await loadProfileStatistics();
 
-    showSubscriptionUnavailable();
+    await loadProfileSubscription();
     await loadProfileCredits();
 
     // Carregar as publicações reais do utilizador.
@@ -877,6 +877,34 @@ function renderCreditSummary(summary) {
         `<div class="credit-total">${formatNumber(Number.isFinite(total) ? total : 0)}</div>` +
         `<p>${formatNumber(Number.isFinite(activeLots) ? activeLots : 0)} lote(s) activo(s)</p>` +
         `<div class="credit-lots">${lotRows}</div>`;
+}
+
+async function loadProfileSubscription() {
+    try {
+        const response = await apiRequest(PROFILE_ENDPOINTS.subscription, { method: "GET" });
+        const subscription = response?.subscription;
+        const plan = subscription?.plan || response?.default_plan || {};
+        const data = subscription || {
+            plan_name: plan.name || "Plano Gratuito",
+            description: plan.description || "Plano gratuito por defeito.",
+            status: "active",
+            max_duration_seconds: plan.max_song_duration,
+            songs_limit: plan.monthly_song_limit,
+            songs_used: 0,
+            payment_status: "—",
+            notice: response?.has_subscription ? "" : "Estás no plano gratuito por defeito."
+        };
+        renderSubscription({
+            ...data,
+            plan_name: data.plan_name || data.plan?.name || plan.name,
+            description: data.description || data.plan_description || plan.description,
+            max_duration_seconds: data.max_duration_seconds ?? plan.max_song_duration,
+            songs_limit: data.songs_limit ?? plan.monthly_song_limit
+        });
+    } catch (error) {
+        console.error("Erro ao carregar assinatura:", error.message);
+        showSubscriptionUnavailable();
+    }
 }
 
 async function loadProfileCredits() {
