@@ -142,7 +142,7 @@ function renderPlans(plans) {
     plansGrid.innerHTML = "";
 
     plans.forEach(plan => {
-        const isFree = plan.price === 0;
+        const isFree = Number(plan.price) === 0;
         const card = document.createElement("div");
         card.className = `plan-card ${plan.code === 'basic' ? 'featured' : ''}`;
 
@@ -216,10 +216,18 @@ if (confirmPaymentBtn) {
             }
 
             paymentModal.style.display = "none";
-            showMessage(`Pedido #${data.payment_id || "—"} criado. Valor: ${data.amount ?? "—"} ${data.currency || "AOA"}. Aguarde a confirmação do administrador.`, "success");
-            
-            // Recarregar dados
-            setTimeout(initPage, 2000);
+            let paymentInfo = `Pedido #${data.payment_id || "—"} criado. Estado: pendente. Valor de referência: ${data.amount ?? "—"} ${data.currency || "AOA"}.`;
+            if (data.crypto_amount) {
+                paymentInfo += ` Envia ${data.crypto_amount} USDC na rede ${data.network} para a carteira ${data.wallet_address}.`;
+            }
+            if (data.transfer_amount_usd) {
+                paymentInfo += ` Envia ${data.transfer_amount_usd} USD através da UniFi. Taxa usada: ${data.aoa_per_usd} AOA/USD.`;
+            }
+            paymentInfo += " A subscrição só será activada depois da confirmação do recebimento.";
+            showMessage(paymentInfo, "success");
+
+            // Recarregar o estado da subscrição após a resposta do servidor.
+            await initPage();
 
         } catch (error) {
             showMessage(error.message, "error");
