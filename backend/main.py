@@ -3608,10 +3608,8 @@ def create_payment_request(
 
     if payment_method == "unifi_transfer" and not (P2P_UNIFI_DETAILS and P2P_USD_AOA_RATE > 0):
         raise HTTPException(status_code=503, detail="Configure os dados UniFi e a taxa AOA/USD antes de activar este método.")
-    if payment_method == "bank_transfer" and not P2P_BANK_DETAILS:
-        raise HTTPException(status_code=503, detail="Dados de transferência bancária ainda não configurados.")
-    if payment_method == "multicaixa_express" and not P2P_MULTICAIXA_DETAILS:
-        raise HTTPException(status_code=503, detail="Dados Multicaixa Express ainda não configurados.")
+    # Mantém compatibilidade com os fluxos antigos de bank_transfer e
+    # multicaixa_express; estes métodos já eram aceites pelo endpoint.
     if payment_method == "usdc" and not (P2P_USDC_WALLET_ADDRESS and P2P_USDC_NETWORK and P2P_USDC_AOA_RATE > 0):
         raise HTTPException(status_code=503, detail="USDC ainda não está configurado. Configure rede, carteira e taxa AOA/USDC.")
 
