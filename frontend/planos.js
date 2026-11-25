@@ -30,7 +30,7 @@ let selectedPlanId = null;
 
 // Obter token
 function getToken() {
-    return localStorage.getItem("access_token") || localStorage.getItem("token");
+    return localStorage.getItem("access_token") || localStorage.getItem("token") || sessionStorage.getItem("access_token") || sessionStorage.getItem("token");
 }
 
 function escapeHTML(value) {
@@ -48,7 +48,7 @@ function renderPaymentMethodHelp() {
         paymentMethodSelect.insertAdjacentElement("afterend", help);
     }
     const method = configuredPaymentMethods.find(item => item.id === paymentMethodSelect?.value);
-    if (help) help.textContent = method ? [method.details, method.network ? `Rede: ${method.network}` : "", method.wallet_address ? `Carteira: ${method.wallet_address}` : ""].filter(Boolean).join(" | ") : "";
+    if (help) help.textContent = method ? [method.details, method.currency ? `Moeda: ${method.currency}` : "", method.aoa_per_usdc ? `Taxa: ${method.aoa_per_usdc} AOA/USDC` : "", method.aoa_per_usd ? `Taxa: ${method.aoa_per_usd} AOA/USD` : "", method.network ? `Rede: ${method.network}` : "", method.wallet_address ? `Carteira: ${method.wallet_address}` : ""].filter(Boolean).join(" | ") : "";
 }
 
 // Mensagens
@@ -65,8 +65,7 @@ if (hamburgerBtn && navMenu) {
 
 if (logoutButton) {
     logoutButton.addEventListener("click", () => {
-        localStorage.clear();
-        sessionStorage.clear();
+        ["access_token", "accessToken", "token", "auth_token", "authToken", "jwt", "jwt_token", "user"].forEach(key => { localStorage.removeItem(key); sessionStorage.removeItem(key); });
         window.location.href = "login.html";
     });
 }
@@ -95,10 +94,13 @@ async function initPage() {
             if (methodsRes.ok) {
                 const methodsData = await methodsRes.json();
                 configuredPaymentMethods = Array.isArray(methodsData.methods) ? methodsData.methods : [];
-                if (paymentMethodSelect && configuredPaymentMethods.length) {
-                    paymentMethodSelect.innerHTML = configuredPaymentMethods.map(method =>
-                        `<option value="${escapeHTML(method.id)}">${escapeHTML(method.label)}</option>`
-                    ).join("");
+                if (paymentMethodSelect) {
+                    paymentMethodSelect.innerHTML = configuredPaymentMethods.length
+                        ? '<option value="">Seleccione um método de pagamento</option>' + configuredPaymentMethods.map(method =>
+                            `<option value="${escapeHTML(method.id)}">${escapeHTML(method.label)}</option>`
+                        ).join("")
+                        : '<option value="">Nenhum método P2P configurado</option>';
+                    if (confirmPaymentBtn) confirmPaymentBtn.disabled = configuredPaymentMethods.length === 0;
                     renderPaymentMethodHelp();
                 }
             }
@@ -110,18 +112,20 @@ async function initPage() {
         const subRes = await fetch(MY_SUB_ENDPOINT, {
             headers: { "Authorization": `Bearer ${token}` }
         });
+        if (!subRes.ok) throw new Error(`Falha ao consultar assinatura (HTTP ${subRes.status}).`);
         const subData = await subRes.json();
 
         if (subData.has_subscription && subData.subscription) {
             const sub = subData.subscription;
-            subStatusText.innerHTML = `Plano ativo: <strong>${sub.plan_name}</strong> (Expira a: ${new Date(sub.expires_at).toLocaleDateString()})`;
+            subStatusText.textContent = `Plano ativo: ${sub.plan_name || sub.plan?.name || "Plano"}${sub.expires_at ? ` (Expira a: ${new Date(sub.expires_at).toLocaleDateString("pt-PT")})` : ""}`;
         } else {
             const defaultPlan = subData.default_plan ? subData.default_plan.name : "Gratuito";
-            subStatusText.innerHTML = `Estás atualmente no plano <strong>${defaultPlan}</strong>.`;
+            subStatusText.textContent = `Estás atualmente no plano ${defaultPlan}.`;
         }
 
         // 2. Carregar lista de planos
         const plansRes = await fetch(PLANS_ENDPOINT);
+        if (!plansRes.ok) throw new Error(`Falha ao carregar planos (HTTP ${plansRes.status}).`);
         const plansData = await plansRes.json();
 
         if (plansData.success && plansData.plans) {
@@ -163,14 +167,15 @@ function renderPlans(plans) {
     // Eventos de clique nos botões de subscrição
     document.querySelectorAll(".select-plan-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
-            const price = parseFloat(e.target.dataset.price);
+            const button = e.currentTarget;
+            const price = parseFloat(button.dataset.price);
             if (price === 0) {
                 showMessage("O plano gratuito já está disponível por defeito.", "success");
                 return;
             }
 
-            selectedPlanId = e.target.dataset.id;
-            modalPlanName.textContent = `Plano: ${e.target.dataset.name} (${price.toLocaleString()} AOA)`;
+            selectedPlanId = button.dataset.id;
+            modalPlanName.textContent = `Plano: ${button.dataset.name} (${price.toLocaleString()} AOA)`;
             paymentModal.style.display = "flex";
         });
     });
@@ -180,8 +185,12 @@ function renderPlans(plans) {
 if (confirmPaymentBtn) {
     confirmPaymentBtn.addEventListener("click", async () => {
         const token = getToken();
-        const paymentMethod = paymentMethodSelect.value;
-        const transactionReference = transactionRefInput.value.trim();
+        const paymentMethod = paymentMethodSelect?.value;
+        const transactionReference = transactionRefInput?.value.trim() || "";
+        if (!token || !selectedPlanId || !paymentMethod || !configuredPaymentMethods.some(method => method.id === paymentMethod)) {
+            showMessage("Selecciona um plano e um método de pagamento configurado.", "error");
+            return;
+        }
 
         confirmPaymentBtn.disabled = true;
         confirmPaymentBtn.textContent = "A processar...";
@@ -202,12 +211,12 @@ if (confirmPaymentBtn) {
 
             const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.detail || "Erro ao criar pedido de pagamento.");
+            if (!response.ok || data.success === false) {
+                throw new Error(data.detail || data.message || "Erro ao criar pedido de pagamento.");
             }
 
             paymentModal.style.display = "none";
-            showMessage("Pedido de pagamento criado com sucesso! Aguarde a confirmação do administrador.", "success");
+            showMessage(`Pedido #${data.payment_id || "—"} criado. Valor: ${data.amount ?? "—"} ${data.currency || "AOA"}. Aguarde a confirmação do administrador.`, "success");
             
             // Recarregar dados
             setTimeout(initPage, 2000);
