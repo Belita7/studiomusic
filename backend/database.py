@@ -2154,7 +2154,8 @@ def create_payment(
         "multicaixa_express",
         "multicaixa_reference",
         "bank_transfer",
-        
+        "unifi_transfer",
+        "usdc",
     }
 
     if payment_method not in allowed_methods:
