@@ -306,6 +306,18 @@ PADDLE_API_BASE = (
     else "https://api.paddle.com"
 )
 
+# Public receiving details for manual P2P payments (configured in Render).
+# Never place Visa card numbers, CVV or expiry dates here.
+P2P_UNIFI_DETAILS = os.getenv("P2P_UNIFI_DETAILS", "").strip()
+P2P_BANK_DETAILS = os.getenv("P2P_BANK_DETAILS", "").strip()
+P2P_MULTICAIXA_DETAILS = os.getenv("P2P_MULTICAIXA_DETAILS", "").strip()
+P2P_USDC_NETWORK = os.getenv("P2P_USDC_NETWORK", "").strip()
+P2P_USDC_WALLET_ADDRESS = os.getenv("P2P_USDC_WALLET_ADDRESS", "").strip()
+try:
+    P2P_USDC_AOA_RATE = Decimal(os.getenv("P2P_USDC_AOA_RATE", "0").strip() or "0")
+except Exception:
+    P2P_USDC_AOA_RATE = Decimal("0")
+
 # Mureka is the only active music-generation provider.
 MUREKA_API_KEY = os.getenv("MUREKA_API_KEY", "").strip()
 MUREKA_BASE_URL = os.getenv("MUREKA_BASE_URL", "https://api.mureka.ai").strip().rstrip("/")
@@ -3431,6 +3443,24 @@ def list_plans():
         "plans": plans
     }
 
+@app.get("/api/payments/p2p/options")
+def p2p_payment_options(user=Depends(get_current_user)):
+    methods = []
+    if P2P_UNIFI_DETAILS:
+        methods.append({"id": "unifi_transfer", "label": "Transferência internacional UniFi", "details": P2P_UNIFI_DETAILS, "currency": "USD"})
+    if P2P_BANK_DETAILS:
+        methods.append({"id": "bank_transfer", "label": "Transferência bancária", "details": P2P_BANK_DETAILS, "currency": "AOA"})
+    if P2P_MULTICAIXA_DETAILS:
+        methods.append({"id": "multicaixa_express", "label": "Multicaixa Express (manual)", "details": P2P_MULTICAIXA_DETAILS, "currency": "AOA"})
+    if P2P_USDC_WALLET_ADDRESS and P2P_USDC_NETWORK and P2P_USDC_AOA_RATE > 0:
+        methods.append({
+            "id": "usdc", "label": "USDC", "details": "Enviar apenas USDC na rede indicada.",
+            "currency": "USDC", "network": P2P_USDC_NETWORK,
+            "wallet_address": P2P_USDC_WALLET_ADDRESS,
+            "aoa_per_usdc": str(P2P_USDC_AOA_RATE)
+        })
+    return {"success": True, "methods": methods}
+
 # ============================================================
 # SUBSCRIÇÕES - PLANO ACTUAL DO UTILIZADOR
 # ============================================================
@@ -3560,7 +3590,9 @@ def create_payment_request(
 
     allowed_methods = {
         "bank_transfer",
-        "multicaixa_express"
+        "multicaixa_express",
+        "unifi_transfer",
+        "usdc"
     }
 
     if payment_method not in allowed_methods:
@@ -3569,6 +3601,15 @@ def create_payment_request(
             status_code=400,
             detail="Método de pagamento inválido."
         )
+
+    if payment_method == "unifi_transfer" and not P2P_UNIFI_DETAILS:
+        raise HTTPException(status_code=503, detail="Dados de recebimento UniFi ainda não configurados.")
+    if payment_method == "bank_transfer" and not P2P_BANK_DETAILS:
+        raise HTTPException(status_code=503, detail="Dados de transferência bancária ainda não configurados.")
+    if payment_method == "multicaixa_express" and not P2P_MULTICAIXA_DETAILS:
+        raise HTTPException(status_code=503, detail="Dados Multicaixa Express ainda não configurados.")
+    if payment_method == "usdc" and not (P2P_USDC_WALLET_ADDRESS and P2P_USDC_NETWORK and P2P_USDC_AOA_RATE > 0):
+        raise HTTPException(status_code=503, detail="USDC ainda não está configurado. Configure rede, carteira e taxa AOA/USDC.")
 
     plan = get_plan_by_id(
         data.plan_id
@@ -3614,7 +3655,7 @@ def create_payment_request(
             payment_method=payment_method,
             payment_provider=(
                 "manual"
-                if payment_method == "bank_transfer"
+                if payment_method in {"bank_transfer", "unifi_transfer", "usdc"}
                 else "pending_integration"
             ),
             transaction_reference=(
@@ -3631,17 +3672,23 @@ def create_payment_request(
             detail=str(error)
         )
 
-    return {
+    response = {
         "success": True,
-        "message": (
-            "Pedido de pagamento criado. "
-            "A subscrição será ativada após a confirmação."
-        ),
+        "message": "Pedido criado. Envie o pagamento e aguarde confirmação.",
         "payment_id": payment_id,
         "amount": amount,
         "currency": plan.get("currency", "AOA"),
-        "status": "pending"
+        "status": "pending",
+        "payment_method": payment_method
     }
+    if payment_method == "usdc":
+        response.update({
+            "crypto_amount": str((Decimal(str(amount)) / P2P_USDC_AOA_RATE).quantize(Decimal("0.000001"))),
+            "crypto_currency": "USDC",
+            "network": P2P_USDC_NETWORK,
+            "wallet_address": P2P_USDC_WALLET_ADDRESS
+        })
+    return response
 @app.post("/api/bitpay/checkout")
 def create_bitpay_checkout(
     data: BitPayCheckoutRequest,
@@ -4137,7 +4184,7 @@ async def upload_payment_proof(
             detail="Este pagamento já foi processado."
         )
 
-    if payment["payment_method"] != "bank_transfer":
+    if payment["payment_method"] not in {"bank_transfer", "unifi_transfer", "multicaixa_express", "usdc"}:
         raise HTTPException(
             status_code=400,
             detail="Este método não aceita comprovativo manual."
@@ -4244,6 +4291,20 @@ async def upload_payment_proof(
     finally:
 
         await file.close()
+
+@app.get("/api/admin/payments/{payment_id}/proof")
+def admin_download_payment_proof(payment_id: int, admin=Depends(require_admin)):
+    payment = get_payment_by_id(payment_id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+    filename = payment.get("proof_file")
+    if not filename:
+        raise HTTPException(status_code=404, detail="Este pagamento não tem comprovativo.")
+    safe_name = Path(str(filename)).name
+    filepath = PAYMENT_PROOFS_DIR / safe_name
+    if not filepath.is_file():
+        raise HTTPException(status_code=404, detail="Comprovativo não encontrado no servidor.")
+    return FileResponse(filepath, filename=safe_name)
 
 # ============================================================
 # PAGAMENTOS - CONSULTAR COMPROVATIVO
