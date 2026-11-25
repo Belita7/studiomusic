@@ -1640,27 +1640,22 @@ inputs.forEach(input => {
         input.disabled = !profileEditMode;
     }
 });
-//Botão guardar
+// Botão guardar
 if (profileElements.saveProfileButton) {
     profileElements.saveProfileButton.hidden = !profileEditMode;
-
-    profileElements.saveProfileButton.style.display = profileEditMode ? "inline-flex": "none";
+    profileElements.saveProfileButton.style.display = profileEditMode ? "inline-flex" : "none";
 }
-// Botão Cancelar.
 
+// Botão cancelar
 if (profileElements.cancelProfileEdit) {
     profileElements.cancelProfileEdit.hidden = !profileEditMode;
-    if (profileElements.cancelProfileEdit) {
-        profileElements.cancelProfileEdit.style.display = profileEditMode ? "inline-flex" : "none";
-    }
+    profileElements.cancelProfileEdit.style.display = profileEditMode ? "inline-flex" : "none";
 }
-//Botão editar
+
+// Botão editar
 if (profileElements.editProfileButton) {
     profileElements.editProfileButton.hidden = profileEditMode;
-
-    profileElements.editProfileButton.style.display =
-    profileEditMode ? "none" : "inline-flex";
-    profileElements.cancelProfileEdit.style.display = profileEditMode ? "none":"inline-flex";
+    profileElements.editProfileButton.style.display = profileEditMode ? "none" : "inline-flex";
 }
 
 }
