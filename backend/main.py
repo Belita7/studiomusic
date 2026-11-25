@@ -26,6 +26,7 @@ from fastapi import (
     Query,
     UploadFile,
     File,
+    Form,
     Request
 )
 
@@ -107,6 +108,7 @@ from database import (
     # SUBSCRIÇÕES
     create_subscription,
     get_user_subscription,
+    get_user_paid_subscription,
     get_user_subscriptions,
 
     # PAGAMENTOS
@@ -305,14 +307,10 @@ PADDLE_API_BASE = (
     else "https://api.paddle.com"
 )
 
-SONGAPI_API_KEY = os.getenv("SONGAPI_API_KEY", "").strip()
-SONGAPI_BASE_URL = os.getenv("SONGAPI_BASE_URL", "https://api.songapi.dev").strip().rstrip("/")
-SONGAPI_MODEL = os.getenv("SONGAPI_MODEL", "v5").strip()
-SONGAPI_WEBHOOK_SECRET = os.getenv("SONGAPI_WEBHOOK_SECRET", "").strip()
-SONGAPI_WEBHOOK_URL = os.getenv(
-    "SONGAPI_WEBHOOK_URL",
-    "https://studiomusic.onrender.com/api/webhooks/songapi"
-).strip()
+# Mureka is the only active music-generation provider.
+MUREKA_API_KEY = os.getenv("MUREKA_API_KEY", "").strip()
+MUREKA_BASE_URL = os.getenv("MUREKA_BASE_URL", "https://api.mureka.ai").strip().rstrip("/")
+MUREKA_MODEL = os.getenv("MUREKA_MODEL", "mureka-9.5").strip()
 PUBLIC_API_BASE_URL = os.getenv("PUBLIC_API_BASE_URL", "").strip().rstrip("/")
 SOURCE_AUDIO_DIR = BASE_DIR / "source_audio"
 SOURCE_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
@@ -355,7 +353,7 @@ JWT_EXPIRE_DAYS = int(
 
 APP_NAME = "StudioMusic.AI"
 
-MAX_PROMPT_LENGTH = 3000
+MAX_PROMPT_LENGTH = 1024
 MAX_AUDIO_DURATION = 600
 
 # ============================================================
@@ -489,11 +487,13 @@ class GenerateMusicRequest(BaseModel):
     style: Optional[str] = Field(default=None, max_length=1000)
     title: Optional[str] = Field(default=None, max_length=100)
     source_url: Optional[str] = None
+    source_reference_id: Optional[str] = Field(default=None, max_length=200)
+    vocal_id: Optional[str] = Field(default=None, max_length=200)
     continue_at: Optional[float] = Field(default=None, gt=0)
     duration: Optional[int] = Field(default=180, ge=1, le=600)
     instrumental: bool = False
     vocal_gender: Optional[str] = None
-    model: str = "v5"
+    model: str = "mureka-9.5"
     audio_weight: Optional[float] = Field(default=None, ge=0, le=1)
     style_weight: Optional[float] = Field(default=None, ge=0, le=1)
     weirdness: Optional[float] = Field(default=None, ge=0, le=1)
@@ -1221,9 +1221,9 @@ def health():
 
         "database": True,
 
-        "songapi_configured": bool(SONGAPI_API_KEY),
-
-        "model": SONGAPI_MODEL,
+        "mureka_configured": bool(MUREKA_API_KEY),
+        "provider": "mureka",
+        "model": MUREKA_MODEL,
 
         "features": {
 
@@ -1255,9 +1255,10 @@ def api_config():
 
         "success": True,
 
-        "model": SONGAPI_MODEL,
+        "model": MUREKA_MODEL,
 
-        "songapi_configured": bool(SONGAPI_API_KEY),
+        "provider": "mureka",
+        "mureka_configured": bool(MUREKA_API_KEY),
 
         "max_prompt_length":
             MAX_PROMPT_LENGTH,
@@ -1731,121 +1732,212 @@ async def update_my_profile_photo(
 # GERAR MÚSICA
 # ============================================================
 
+def get_user_paid_subscription(user_id: int) -> bool:
+    """True apenas quando existe uma assinatura activa de um plano pago."""
+    subscription = get_user_subscription(user_id)
+    if not subscription or str(subscription.get("status") or "").lower() != "active":
+        return False
+    try:
+        return Decimal(str(subscription.get("plan_price") or "0")) > 0
+    except (TypeError, ValueError, ArithmeticError):
+        return False
+
+
 @app.post("/api/music/upload-source")
 async def upload_source_audio(
     file: UploadFile = File(...),
+    purpose: str = Form(default="reference"),
     user=Depends(get_current_user)
 ):
-    """Guarda áudio de referência e devolve URL pública temporária para a SongAPI."""
-    if not PUBLIC_API_BASE_URL:
-        raise HTTPException(status_code=503, detail="PUBLIC_API_BASE_URL não configurada no Render.")
-    allowed = {"audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/mp4", "audio/aac", "audio/ogg", "audio/flac", "audio/webm"}
-    if file.content_type not in allowed:
-        raise HTTPException(status_code=415, detail="Formato de áudio não suportado.")
-    suffix = Path(file.filename or "audio.mp3").suffix.lower()
-    if suffix not in {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".webm"}:
-        suffix = ".mp3"
-    filename = f"{uuid.uuid4().hex}{suffix}"
-    target = SOURCE_AUDIO_DIR / filename
-    size = 0
+    """Envia o áudio de referência recebido ao backend e à API Mureka."""
+    if not MUREKA_API_KEY:
+        raise HTTPException(status_code=503, detail="MUREKA_API_KEY não configurada no servidor.")
+    if not get_user_paid_subscription(user["id"]):
+        raise HTTPException(status_code=403, detail="O envio de áudio para geração requer uma subscrição paga activa.")
+    if purpose not in {"reference", "instrumental"}:
+        raise HTTPException(status_code=400, detail="Finalidade de áudio inválida.")
+
+    filename = Path(file.filename or "reference.mp3").name
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".mp3", ".m4a"}:
+        raise HTTPException(status_code=415, detail="A Mureka aceita áudio de referência em MP3 ou M4A.")
+
+    content = await file.read(10 * 1024 * 1024 + 1)
+    await file.close()
+    if not content:
+        raise HTTPException(status_code=400, detail="O ficheiro de áudio está vazio.")
+    if len(content) >= 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="O áudio de referência deve ter menos de 10 MB.")
+
     try:
-        with target.open("wb") as out:
-            while True:
-                chunk = await file.read(1024 * 1024)
-                if not chunk:
-                    break
-                size += len(chunk)
-                if size > MAX_SOURCE_AUDIO_BYTES:
-                    raise HTTPException(status_code=413, detail=f"O áudio excede {MAX_SOURCE_AUDIO_BYTES // (1024*1024)} MB.")
-                out.write(chunk)
-        return {"source_url": f"{PUBLIC_API_BASE_URL}/source-audio/{filename}", "filename": filename, "size_bytes": size}
-    except Exception:
-        target.unlink(missing_ok=True)
+        response = requests.post(
+            f"{MUREKA_BASE_URL}/v1/files/upload",
+            headers={"Authorization": f"Bearer {MUREKA_API_KEY}"},
+            data={"purpose": purpose},
+            files={"file": (filename, content, file.content_type or "audio/mpeg")},
+            timeout=60
+        )
+        try:
+            result = response.json()
+        except ValueError:
+            result = {"message": response.text[:1000]}
+        if response.status_code not in {200, 201}:
+            logger.error("Mureka reference upload failed (%s): %s", response.status_code, result)
+            raise HTTPException(status_code=502, detail=f"A Mureka não aceitou o áudio de referência: {result.get('error', result.get('message', 'erro do fornecedor'))}")
+        reference_id = result.get("id") or result.get("reference_id")
+        if not reference_id:
+            raise HTTPException(status_code=502, detail="A Mureka não devolveu o ID do áudio de referência.")
+        return {"success": True, "reference_id": str(reference_id),
+                "instrumental_id": str(reference_id) if purpose == "instrumental" else None,
+                "filename": filename, "size_bytes": len(content)}
+    except HTTPException:
         raise
-    finally:
-        await file.close()
+    except requests.RequestException as exc:
+        logger.warning("Mureka reference upload connection error: %s", exc)
+        raise HTTPException(status_code=502, detail="Não foi possível enviar o áudio para a Mureka.")
+
+
+@app.post("/api/music/clone-voice")
+async def clone_voice_sample(
+    file: UploadFile = File(...),
+    authorized: bool = Form(default=False),
+    user=Depends(get_current_user)
+):
+    """Cria um Vocal ID Mureka apenas para uma voz que o utilizador tem direito a usar."""
+    if not MUREKA_API_KEY:
+        raise HTTPException(status_code=503, detail="MUREKA_API_KEY não configurada no servidor.")
+    if not get_user_paid_subscription(user["id"]):
+        raise HTTPException(status_code=403, detail="A clonagem vocal requer uma subscrição paga activa.")
+    if not authorized:
+        raise HTTPException(status_code=400, detail="Confirma que tens autorização para utilizar esta voz.")
+    filename = Path(file.filename or "voice.mp3").name
+    if Path(filename).suffix.lower() not in {".mp3", ".m4a"}:
+        raise HTTPException(status_code=415, detail="A amostra vocal deve ser MP3 ou M4A.")
+    content = await file.read(10 * 1024 * 1024 + 1)
+    await file.close()
+    if not content:
+        raise HTTPException(status_code=400, detail="A amostra vocal está vazia.")
+    if len(content) >= 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="A amostra vocal deve ter menos de 10 MB.")
+    try:
+        response = requests.post(
+            f"{MUREKA_BASE_URL}/v1/song/vocal-clone",
+            headers={"Authorization": f"Bearer {MUREKA_API_KEY}"},
+            files={"file": (filename, content, file.content_type or "audio/mpeg")},
+            timeout=60
+        )
+        try:
+            result = response.json()
+        except ValueError:
+            result = {"message": response.text[:1000]}
+        if response.status_code not in {200, 201}:
+            logger.warning("Mureka vocal clone rejected (%s): %s", response.status_code, result)
+            detail = result.get("error") or result.get("message") or result
+            raise HTTPException(status_code=502, detail=f"A Mureka não aceitou a amostra vocal: {detail}")
+        vocal_id = result.get("vocal_id") or result.get("id")
+        if not vocal_id:
+            raise HTTPException(status_code=502, detail="A Mureka não devolveu o ID da voz.")
+        return {"success": True, "vocal_id": str(vocal_id)}
+    except HTTPException:
+        raise
+    except requests.RequestException as exc:
+        logger.warning("Mureka vocal clone connection error: %s", exc)
+        raise HTTPException(status_code=502, detail="Não foi possível enviar a amostra vocal para a Mureka.")
 
 
 @app.post("/api/music/generate")
 def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
-    """Submete geração/transformação à SongAPI. O processamento continua em background."""
-    if not SONGAPI_API_KEY:
-        raise HTTPException(status_code=503, detail="SONGAPI_API_KEY não configurada no servidor.")
+    """Cria uma tarefa de música na Mureka, mantendo a cobrança de créditos."""
+    if not MUREKA_API_KEY:
+        raise HTTPException(status_code=503, detail="MUREKA_API_KEY não configurada no servidor.")
 
-    mode = (data.mode or "generate").strip().lower()
-    if mode not in {"generate", "cover", "extend", "add_vocals"}:
-        raise HTTPException(status_code=400, detail="Modo inválido. Use generate, cover, extend ou add_vocals.")
+    # A geração completa é um recurso pago: validar no backend em cada pedido.
+    if not get_user_paid_subscription(user["id"]):
+        raise HTTPException(status_code=403, detail="A geração completa de músicas requer uma subscrição paga activa.")
 
     prompt = (data.prompt or "").strip()
     lyrics = (data.lyrics or "").strip()
     style = (data.style or "").strip()
-    source_url = (data.source_url or "").strip()
-    if mode == "generate" and not (prompt or lyrics):
-        raise HTTPException(status_code=400, detail="Indique um prompt ou forneça a letra da música.")
-    if mode in {"cover", "extend", "add_vocals"} and not source_url:
-        raise HTTPException(status_code=400, detail="Carregue primeiro um áudio de referência.")
-    if mode == "cover" and not style:
-        raise HTTPException(status_code=400, detail="Descreva o novo estilo musical.")
-    if mode == "extend" and not data.continue_at:
-        raise HTTPException(status_code=400, detail="Indique o ponto (em segundos) a partir do qual pretende prolongar o áudio.")
-    if mode == "add_vocals" and not prompt:
-        prompt = lyrics
-    if mode == "add_vocals" and not prompt:
-        raise HTTPException(status_code=400, detail="Forneça a letra ou uma descrição para a voz.")
-    if data.vocal_gender not in {None, "m", "f"}:
-        raise HTTPException(status_code=400, detail="vocal_gender deve ser 'm' ou 'f'.")
+    reference_id = (data.source_reference_id or "").strip()
+    if data.source_url and not reference_id:
+        raise HTTPException(status_code=400, detail="O áudio precisa de ser enviado primeiro para /api/music/upload-source.")
+    if not (prompt or lyrics):
+        raise HTTPException(status_code=400, detail="Indique uma descrição ou forneça a letra da música.")
+    if len(prompt) > 1024 or len(style) > 1024:
+        raise HTTPException(status_code=400, detail="A descrição musical da Mureka não pode ultrapassar 1024 caracteres.")
+    if data.vocal_gender not in {None, "m", "f", "male", "female"}:
+        raise HTTPException(status_code=400, detail="vocal_gender deve ser m/f ou male/female.")
+    vocal_id = (data.vocal_id or "").strip()
+    if data.instrumental and vocal_id:
+        raise HTTPException(status_code=400, detail="Uma voz clonada não pode ser usada numa geração instrumental.")
 
-    title = (data.title or "Nova música StudioMusic.AI").strip()
+    model = (data.model or MUREKA_MODEL).strip()
+    allowed_models = {"mureka-7.6", "mureka-8", "mureka-9", "mureka-9.5", "mureka-o2"}
+    if model not in allowed_models:
+        model = MUREKA_MODEL if MUREKA_MODEL in allowed_models else "mureka-9.5"
+    if model == "mureka-o2" and vocal_id:
+        raise HTTPException(status_code=400, detail="O modelo mureka-o2 não aceita um perfil vocal vocal_id.")
+    gender = {"m": "male", "f": "female"}.get(data.vocal_gender, data.vocal_gender)
+    music_prompt = ", ".join(part for part in (prompt, style) if part)[:1024]
+
+    if data.instrumental:
+        endpoint = "/v1/instrumental/generate"
+        payload = {"model": model, "prompt": music_prompt, "n": 1}
+        if model == "mureka-9.5" and data.duration and not reference_id:
+            payload["duration"] = max(120, min(300, int(data.duration)))
+        if reference_id:
+            payload = {"model": model, "instrumental_id": reference_id, "n": 1}
+    elif lyrics:
+        endpoint = "/v1/song/generate"
+        payload = {"model": model, "lyrics": lyrics, "n": 1}
+        if music_prompt:
+            payload["prompt"] = music_prompt
+        if gender:
+            payload["gender"] = gender
+        if vocal_id:
+            payload["vocal_id"] = vocal_id
+        if reference_id:
+            payload["reference_id"] = reference_id
+        elif model == "mureka-9.5" and data.duration:
+            payload["duration"] = max(120, min(300, int(data.duration)))
+    else:
+        endpoint = "/v1/song/easy-generate"
+        payload = {"model": model, "prompt": music_prompt, "n": 1}
+        if gender:
+            payload["gender"] = gender
+        if vocal_id:
+            payload["vocal_id"] = vocal_id
+        if reference_id:
+            payload["reference_id"] = reference_id
+        elif model == "mureka-9.5" and data.duration:
+            payload["duration"] = max(120, min(300, int(data.duration)))
+
+    title = (data.title or "Nova música StudioMusic.AI").strip()[:100]
     credit_lot_id = consume_user_credit(user["id"])
     if credit_lot_id is None:
         available = get_user_credit_balance(user["id"])
         raise HTTPException(status_code=402, detail=f"Créditos insuficientes. Saldo actual: {available}.")
 
-    song_prompt = prompt or lyrics or style or f"{mode} a partir de áudio"
-    song = create_song(title=title, prompt=song_prompt, model=data.model or SONGAPI_MODEL,
-                       duration=data.duration if hasattr(data, "duration") and data.duration else 180,
-                       instrumental=data.instrumental, status="pending", user_id=user["id"], is_public=False)
-    song_id = song["id"]
-
-    payload = {"model": data.model or SONGAPI_MODEL, "instrumental": data.instrumental}
-    payload["webhook_url"] = SONGAPI_WEBHOOK_URL
-    if data.duration is not None:
-        payload["duration"] = data.duration
-    if data.vocal_gender:
-        payload["vocal_gender"] = data.vocal_gender
-    if data.style:
-        payload["style"] = style
-    if data.title:
-        payload["title"] = title
-    if data.audio_weight is not None:
-        payload["audio_weight"] = data.audio_weight
-    if data.style_weight is not None:
-        payload["style_weight"] = data.style_weight
-    if data.weirdness is not None:
-        payload["weirdness"] = data.weirdness
-
-    if mode == "generate":
-        if prompt:
-            payload["prompt"] = prompt
-        if lyrics:
-            payload["lyrics"] = lyrics
-    elif mode == "cover":
-        payload.update({"audio_url": source_url, "style": style})
-        if prompt:
-            payload["prompt"] = prompt
-    elif mode == "extend":
-        payload.update({"audio_url": source_url, "continue_at": data.continue_at})
-        if prompt:
-            payload["prompt"] = prompt
-    else:
-        payload.update({"audio_url": source_url, "prompt": prompt})
+    song_prompt = prompt or lyrics or style or "Música instrumental StudioMusic.AI"
+    try:
+        song = create_song(
+            title=title, prompt=song_prompt, model=model,
+            duration=(max(120, min(300, int(data.duration)))
+                      if model == "mureka-9.5" and data.duration and not reference_id else 180),
+            instrumental=data.instrumental, status="pending",
+            user_id=user["id"], is_public=False
+        )
+        song_id = song["id"]
+    except Exception as exc:
+        restore_user_credit(credit_lot_id)
+        logger.exception("Could not create local song record")
+        raise HTTPException(status_code=500, detail="Não foi possível registar a música. O crédito foi reposto.")
 
     try:
         response = requests.post(
-            f"{SONGAPI_BASE_URL}/v1/{mode}",
-            headers={"Authorization": f"Bearer {SONGAPI_API_KEY}", "Content-Type": "application/json"},
-            json=payload,
-            timeout=45
+            f"{MUREKA_BASE_URL}{endpoint}",
+            headers={"Authorization": f"Bearer {MUREKA_API_KEY}", "Content-Type": "application/json"},
+            json=payload, timeout=60
         )
         try:
             result = response.json()
@@ -1854,21 +1946,32 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
         if response.status_code not in {200, 201, 202}:
             update_song(song_id=song_id, status="failed", error_message=str(result)[:2000])
             restore_user_credit(credit_lot_id)
-            raise HTTPException(status_code=502, detail=f"SongAPI recusou o pedido ({response.status_code}): {result.get('message', result)}")
-        generation_id = result.get("id") or result.get("generation_id") or result.get("task_id")
+            detail = (result.get("error") or {}).get("message") if isinstance(result.get("error"), dict) else result.get("error")
+            detail = detail or result.get("message") or result
+            raise HTTPException(status_code=502, detail=f"A Mureka recusou o pedido ({response.status_code}): {detail}")
+
+        generation_id = result.get("id") or result.get("task_id") or result.get("generation_id")
         if not generation_id:
-            update_song(song_id=song_id, status="failed", error_message="Resposta SongAPI sem ID de geração.")
+            update_song(song_id=song_id, status="failed", error_message="Resposta Mureka sem ID da tarefa.")
             restore_user_credit(credit_lot_id)
-            raise HTTPException(status_code=502, detail="A SongAPI não devolveu o identificador da geração.")
-        update_song(song_id=song_id, task_id=generation_id, generation_json=json.dumps({"mode": mode, "submission": result, "credit_lot_id": credit_lot_id}))
-        return {"success": True, "song_id": song_id, "generation_id": generation_id, "status": result.get("status", "queued"), "mode": mode, "message": "Pedido aceite. Consulte o estado para acompanhar a geração."}
+            raise HTTPException(status_code=502, detail="A Mureka não devolveu o identificador da tarefa.")
+        generation_json = {
+            "provider": "mureka", "mode": "generate",
+            "submission": result, "credit_lot_id": credit_lot_id,
+            "reference_id": reference_id or None,
+            "vocal_id": vocal_id or None
+        }
+        update_song(song_id=song_id, task_id=str(generation_id), generation_json=json.dumps(generation_json))
+        return {"success": True, "song_id": song_id, "generation_id": str(generation_id),
+                "status": result.get("status", "queued"), "provider": "mureka",
+                "message": "Pedido aceite pela Mureka. Consulte o estado para acompanhar a geração."}
     except HTTPException:
         raise
     except requests.RequestException as exc:
         update_song(song_id=song_id, status="failed", error_message=str(exc)[:2000])
         restore_user_credit(credit_lot_id)
-        raise HTTPException(status_code=502, detail="Não foi possível comunicar com a SongAPI.")
-
+        logger.warning("Mureka generation connection error: %s", exc)
+        raise HTTPException(status_code=502, detail="Não foi possível comunicar com a Mureka.")
 
 
 # ============================================================
@@ -1923,195 +2026,63 @@ def list_user_favorites(user=Depends(get_current_user)):
 
 
 # ============================================================
-# SONGAPI WEBHOOK
-# Recebe os eventos generation.complete / generation.failed.
-# ============================================================
-
-@app.post("/api/webhooks/songapi")
-async def songapi_webhook(request: Request):
-    if not SONGAPI_WEBHOOK_SECRET:
-        logger.error("SONGAPI_WEBHOOK_SECRET não configurado.")
-        raise HTTPException(status_code=500, detail="Webhook SongAPI não configurado.")
-
-    raw_body = await request.body()
-    signature_header = request.headers.get("songapi-signature", "")
-    try:
-        parts = dict(
-            piece.strip().split("=", 1)
-            for piece in signature_header.split(",")
-            if "=" in piece
-        )
-        timestamp = parts["t"]
-        received_signature = parts["v1"]
-
-        if abs(time.time() - int(timestamp)) > 300:
-            raise HTTPException(status_code=401, detail="Assinatura webhook expirada.")
-
-        signed_payload = timestamp.encode("utf-8") + b"." + raw_body
-        expected_signature = hmac.new(
-            SONGAPI_WEBHOOK_SECRET.encode("utf-8"),
-            signed_payload,
-            hashlib.sha256
-        ).hexdigest()
-
-        if not hmac.compare_digest(
-            expected_signature,
-            received_signature
-        ):
-            raise HTTPException(status_code=401, detail="Assinatura webhook inválida.")
-    except HTTPException:
-        raise
-    except (KeyError, TypeError, ValueError):
-        raise HTTPException(status_code=400, detail="Formato de assinatura webhook inválido.")
-
-    try:
-        event = json.loads(raw_body)
-    except (TypeError, ValueError):
-        raise HTTPException(status_code=400, detail="JSON webhook inválido.")
-
-    event_type = str(event.get("type") or "").lower()
-    generation = (
-        (event.get("data") or {}).get("generation")
-        or event.get("generation")
-        or event.get("data")
-        or {}
-    )
-    if not isinstance(generation, dict):
-        raise HTTPException(status_code=400, detail="Dados da geração inválidos.")
-
-    generation_id = generation.get("id") or generation.get("generation_id")
-    if not generation_id:
-        raise HTTPException(status_code=400, detail="ID da geração ausente.")
-
-    # Locate the local song by the provider's generation/task ID.
-    all_songs = get_songs() or []
-    song = next(
-        (
-            item for item in all_songs
-            if isinstance(item, dict)
-            and str(item.get("task_id") or "") == str(generation_id)
-        ),
-        None
-    )
-    if not song:
-        # Acknowledge unknown events to avoid endless provider retries.
-        logger.warning("SongAPI webhook para geração não associada: %s", generation_id)
-        return {"received": True, "matched": False}
-
-    song_id = int(song["id"])
-    generation_json = {}
-    try:
-        generation_json = json.loads(song.get("generation_json") or "{}")
-    except (TypeError, ValueError):
-        generation_json = {}
-    generation_json["result"] = generation
-    generation_json["webhook_event"] = event_type
-
-    state = str(generation.get("status") or "").lower()
-    clips = generation.get("clips") or []
-    first_clip = clips[0] if clips and isinstance(clips[0], dict) else {}
-    audio_url = (
-        first_clip.get("audio_url")
-        or generation.get("audio_url")
-        or generation.get("url")
-    )
-    cover_url = first_clip.get("image_url") or generation.get("image_url")
-
-    if event_type == "generation.complete" or state in {"complete", "completed", "success", "succeeded"}:
-        if audio_url:
-            update_song(
-                song_id=song_id,
-                status="completed",
-                audio_url=audio_url,
-                cover_url=cover_url,
-                generation_json=json.dumps(generation_json)
-            )
-        else:
-            logger.warning("SongAPI marcou completo sem audio_url para song_id=%s", song_id)
-            update_song(
-                song_id=song_id,
-                generation_json=json.dumps(generation_json)
-            )
-    elif event_type == "generation.failed" or state in {"failed", "error", "cancelled", "canceled"}:
-        failure = str(
-            generation.get("error")
-            or generation.get("message")
-            or "A geração falhou na SongAPI."
-        )[:1000]
-        update_song(
-            song_id=song_id,
-            status="failed",
-            error_message=failure,
-            generation_json=json.dumps(generation_json)
-        )
-        if not generation_json.get("credit_restored"):
-            credit_lot_id = generation_json.get("credit_lot_id")
-            if credit_lot_id:
-                restore_user_credit(credit_lot_id)
-            generation_json["credit_restored"] = True
-            update_song(
-                song_id=song_id,
-                generation_json=json.dumps(generation_json)
-            )
-    else:
-        update_song(
-            song_id=song_id,
-            generation_json=json.dumps(generation_json)
-        )
-
-    return {"received": True, "matched": True}
-
-
 @app.get("/api/music/{song_id}/status")
 def get_music_generation_status(song_id: int, user=Depends(get_current_user)):
     song = get_song(song_id)
     if not song or (song.get("user_id") != user["id"] and not user.get("is_admin")):
         raise HTTPException(status_code=404, detail="Geração não encontrada.")
-    generation_id = song.get("task_id")
-    if not generation_id:
+    if song.get("status") in {"completed", "failed"} or not song.get("task_id"):
         return serialize_song(song, user=user)
-    if not SONGAPI_API_KEY:
-        raise HTTPException(status_code=503, detail="SONGAPI_API_KEY não configurada.")
+
     try:
-        response = requests.get(
-            f"{SONGAPI_BASE_URL}/v1/generations/{generation_id}",
-            headers={"Authorization": f"Bearer {SONGAPI_API_KEY}"}, timeout=30
-        )
+        gen_json = json.loads(song.get("generation_json") or "{}")
+    except (TypeError, ValueError):
+        gen_json = {}
+    task_id = str(song.get("task_id"))
+    if not MUREKA_API_KEY:
+        raise HTTPException(status_code=503, detail="MUREKA_API_KEY não configurada.")
+    url = f"{MUREKA_BASE_URL}/v1/song/query/{task_id}"
+    headers = {"Authorization": f"Bearer {MUREKA_API_KEY}"}
+    provider_name = "Mureka"
+
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
         result = response.json()
-    except requests.RequestException:
-        raise HTTPException(status_code=502, detail="Não foi possível consultar o estado na SongAPI.")
+    except requests.RequestException as exc:
+        logger.warning("Generation status query failed (%s): %s", provider_name, exc)
+        raise HTTPException(status_code=502, detail=f"Não foi possível consultar o estado na {provider_name}.")
 
     state = str(result.get("status") or "processing").strip().lower()
-    clips = result.get("clips") or []
-    clips_payload = [{k: c.get(k) for k in ("id", "audio_url", "image_url", "duration_secs", "lyrics", "tags", "title")} for c in clips if isinstance(c, dict)]
-    gen_json = json.loads(song.get("generation_json") or "{}")
+    choices = result.get("choices") or result.get("clips") or []
+    first = choices[0] if choices and isinstance(choices[0], dict) else {}
+    audio_url = first.get("url") or first.get("audio_url") or first.get("mp3_url") or first.get("wav_url") or result.get("audio_url") or result.get("url")
+    cover_url = first.get("image_url") or first.get("cover_url") or result.get("image_url")
     gen_json["result"] = result
     changes = {"generation_json": json.dumps(gen_json)}
-    if state in {"complete", "completed", "succeeded", "success"}:
-        first = clips[0] if clips and isinstance(clips[0], dict) else {}
-        audio_url = first.get("audio_url") or result.get("audio_url") or result.get("url")
+
+    if state in {"succeeded", "success", "complete", "completed"}:
         if audio_url:
-            changes.update(status="completed", audio_url=audio_url, cover_url=first.get("image_url") or result.get("image_url"))
+            changes.update(status="completed", audio_url=audio_url, cover_url=cover_url)
         else:
-            # Provider may mark complete before publishing the clip URL.
             state = "processing"
-    elif state in {"failed", "error", "cancelled", "canceled"}:
-        failure_message = str(result.get("error") or result.get("message") or "A geração falhou no serviço de música.")[:1000]
-        changes.update(status="failed", error_message=failure_message)
+    elif state in {"failed", "error", "timeouted", "cancelled", "canceled"}:
+        failure = str(result.get("failed_reason") or result.get("error") or result.get("message") or f"A geração falhou na {provider_name}.")[:1000]
+        changes.update(status="failed", error_message=failure)
         if not gen_json.get("credit_restored"):
             credit_lot_id = gen_json.get("credit_lot_id")
             if credit_lot_id:
                 restore_user_credit(credit_lot_id)
             gen_json["credit_restored"] = True
             changes["generation_json"] = json.dumps(gen_json)
+
     update_song(song_id=song_id, **changes)
     refreshed = get_song(song_id)
     serialized = serialize_song(refreshed, user=user)
-    serialized["clips"] = clips_payload
+    serialized["clips"] = choices
     serialized["generation_status"] = state
-    if state in {"failed", "error", "cancelled", "canceled"}:
-        serialized["generation_error"] = str(result.get("error") or result.get("message") or "A geração falhou.")[:1000]
+    if state in {"failed", "error", "timeouted", "cancelled", "canceled"}:
+        serialized["generation_error"] = str(result.get("failed_reason") or result.get("error") or result.get("message") or "A geração falhou.")[:1000]
     return serialized
 
 
@@ -5652,7 +5623,7 @@ def startup_event():
         "Health:   http://127.0.0.1:8000/api/health"
     )
     print(
-        "SongAPI:  " + ("configurada" if SONGAPI_API_KEY else "não configurada")
+        "Mureka:  " + ("configurada" if MUREKA_API_KEY else "não configurada")
     )
     print(
         "BitPay:   " + BITPAY_ENV.upper()
