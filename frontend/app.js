@@ -236,6 +236,11 @@ function initializeEvents() {
         refreshCommunityBtn.addEventListener("click", loadCommunitySongs);
     }
 
+    const p2pCreateButton = document.getElementById("p2pCreate");
+    if (p2pCreateButton) p2pCreateButton.addEventListener("click", createP2PPayment);
+    const p2pMethodSelect = document.getElementById("p2pMethod");
+    if (p2pMethodSelect) p2pMethodSelect.addEventListener("change", renderP2PMethodDetails);
+
     if (userMenuButton && userDropdown) {
         userMenuButton.addEventListener("click", event => {
             event.stopPropagation();
@@ -419,7 +424,8 @@ function showPage(page) {
         musicas: "Minhas músicas",
         favoritos: "Favoritos",
         comunidade: "Comunidade",
-        historico: "Histórico"
+        historico: "Histórico",
+        pagamentos: "Pagamentos"
     };
 
     if (pageTitle) {
@@ -443,6 +449,10 @@ function showPage(page) {
 
         case "historico":
             loadHistory();
+            break;
+
+        case "pagamentos":
+            loadP2PPaymentPage();
             break;
     }
 }
@@ -3178,3 +3188,147 @@ window.getLyrics = getLyrics;
 window.resetLyrics = resetLyrics;
 window.downloadAudio = downloadAudio;
 
+
+
+/* ============================================================
+   PAGAMENTOS P2P — ADITIVO; NÃO ALTERA O CHECKOUT PADDLE/ BITPAY
+   ============================================================ */
+let p2pMethods = [];
+let p2pPlans = [];
+
+function p2pToken() {
+    return localStorage.getItem("access_token") || "";
+}
+function p2pAuthHeaders(extra = {}) {
+    const token = p2pToken();
+    return Object.assign({}, extra, token ? {Authorization: `Bearer ${token}`} : {});
+}
+function p2pEscape(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[char]));
+}
+function p2pMethodLabel(method) {
+    return ({
+        bank_transfer:"Transferência bancária",
+        unifi_transfer:"Transferência internacional UniFi",
+        multicaixa_express:"Multicaixa Express",
+        usdc:"USDC",
+        card:"Cartão / Paddle"
+    })[method] || method || "—";
+}
+async function loadP2PPaymentPage() {
+    const token = p2pToken();
+    if (!token) { window.location.href = "login.html"; return; }
+    const status = document.getElementById("p2pStatus");
+    try {
+        const [plansResponse, methodsResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/plans`, {headers:p2pAuthHeaders()}),
+            fetch(`${API_BASE_URL}/api/payments/p2p/options`, {headers:p2pAuthHeaders()})
+        ]);
+        if (!plansResponse.ok || !methodsResponse.ok) throw new Error("Não foi possível carregar planos ou métodos.");
+        const plansData = await plansResponse.json();
+        const methodsData = await methodsResponse.json();
+        p2pPlans = plansData.plans || [];
+        p2pMethods = methodsData.methods || [];
+        const planSelect = document.getElementById("p2pPlan");
+        const methodSelect = document.getElementById("p2pMethod");
+        if (planSelect) planSelect.innerHTML = '<option value="">Seleccione um plano</option>' + p2pPlans.filter(p=>p.code!=="free" && Number(p.price)>0).map(p=>`<option value="${p.id}">${p2pEscape(p.name)} — ${p2pEscape(p.price)} ${p2pEscape(p.currency||"AOA")}</option>`).join("");
+        if (methodSelect) methodSelect.innerHTML = '<option value="">Seleccione um método</option>' + p2pMethods.map(m=>`<option value="${p2pEscape(m.id)}">${p2pEscape(m.label)}</option>`).join("");
+        renderP2PMethodDetails();
+        await loadP2PMyPayments();
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        if (user.is_admin || user.isAdmin || user.role === "admin") {
+            document.getElementById("p2pAdminPanel")?.classList.remove("hidden");
+            await loadP2PAdminPayments();
+        }
+        if (status) status.textContent = p2pMethods.length ? "" : "Os métodos P2P ainda não foram configurados pelo administrador.";
+    } catch (error) {
+        if (status) status.textContent = error.message || "Erro ao carregar pagamentos.";
+    }
+}
+function renderP2PMethodDetails() {
+    const id = document.getElementById("p2pMethod")?.value;
+    const method = p2pMethods.find(m=>m.id===id);
+    const details = document.getElementById("p2pMethodDetails");
+    const crypto = document.getElementById("p2pUsdcDetails");
+    if (details) {
+        details.classList.toggle("hidden", !method || id==="usdc");
+        details.textContent = method && id!=="usdc" ? `${method.label}\n${method.details || ""}\nMoeda de referência: ${method.currency || ""}` : "";
+    }
+    if (crypto) {
+        crypto.classList.toggle("hidden", !method || id!=="usdc");
+        crypto.textContent = method && id==="usdc" ? `Rede: ${method.network}\nCarteira: ${method.wallet_address}\nTaxa configurada: ${method.aoa_per_usdc} AOA por USDC. Verifique a rede e o montante antes de enviar.` : "";
+    }
+}
+async function createP2PPayment() {
+    const planId = Number(document.getElementById("p2pPlan")?.value);
+    const method = document.getElementById("p2pMethod")?.value;
+    const status = document.getElementById("p2pStatus");
+    const button = document.getElementById("p2pCreate");
+    if (!planId || !method) { if(status)status.textContent="Seleccione um plano e um método."; return; }
+    button.disabled=true;
+    if(status)status.textContent="A criar pedido...";
+    try {
+        const response=await fetch(`${API_BASE_URL}/api/payments`,{
+            method:"POST",headers:p2pAuthHeaders({"Content-Type":"application/json"}),
+            body:JSON.stringify({plan_id:planId,payment_method:method,transaction_reference:document.getElementById("p2pReference")?.value.trim()||null})
+        });
+        const data=await response.json();
+        if(!response.ok)throw new Error(data.detail||"Não foi possível criar o pedido.");
+        let message=`Pedido #${data.payment_id} criado. Estado: pendente.\nValor: ${data.amount} ${data.currency}.`;
+        if(data.crypto_amount)message+=`\nEnviar ${data.crypto_amount} USDC na rede ${data.network} para ${data.wallet_address}.`;
+        message+="\nEnvie o pagamento e submeta o comprovativo abaixo. A ativação só ocorre após verificação.";
+        if(status)status.textContent=message;
+        await loadP2PMyPayments();
+    } catch(error) { if(status)status.textContent=error.message||"Erro ao criar pedido."; }
+    finally { button.disabled=false; }
+}
+async function loadP2PMyPayments() {
+    const host=document.getElementById("p2pMyPayments"); if(!host)return;
+    try {
+        const response=await fetch(`${API_BASE_URL}/api/payments/me`,{headers:p2pAuthHeaders()});
+        const data=await response.json();if(!response.ok)throw new Error(data.detail||"Falha ao consultar pagamentos.");
+        const rows=data.payments||[];
+        if(!rows.length){host.textContent="Ainda não existem pedidos de pagamento.";return;}
+        host.innerHTML='<table class="pay-table"><thead><tr><th>Pedido</th><th>Plano</th><th>Método</th><th>Valor</th><th>Estado</th><th>Comprovativo</th></tr></thead><tbody>'+rows.map(p=>{
+            const canProof=p.status==="pending" && ["bank_transfer","unifi_transfer","multicaixa_express","usdc"].includes(p.payment_method) && !p.proof_file;
+            return `<tr><td>#${p.id}</td><td>${p2pEscape(p.plan_name||p.plan_code)}</td><td>${p2pEscape(p2pMethodLabel(p.payment_method))}</td><td>${p2pEscape(p.amount)} ${p2pEscape(p.currency||"AOA")}</td><td>${p2pEscape(p.status)}</td><td>${canProof?`<input class="pay-proof-input" type="file" accept=".jpg,.jpeg,.png,.pdf" id="p2p-proof-${p.id}"><button class="secondary-button" onclick="uploadP2PProof(${p.id})">Enviar</button>`:p.proof_file?"Enviado":"—"}</td></tr>`;
+        }).join("")+"</tbody></table>";
+    } catch(error){host.textContent=error.message||"Erro ao carregar histórico.";}
+}
+async function uploadP2PProof(paymentId) {
+    const input=document.getElementById(`p2p-proof-${paymentId}`);const file=input?.files?.[0];
+    if(!file){alert("Seleccione o comprovativo.");return;}
+    const form=new FormData();form.append("file",file);
+    try{
+        const response=await fetch(`${API_BASE_URL}/api/payments/${paymentId}/proof`,{method:"POST",headers:p2pAuthHeaders(),body:form});
+        const data=await response.json();if(!response.ok)throw new Error(data.detail||"Falha ao enviar comprovativo.");
+        alert(data.message||"Comprovativo enviado.");await loadP2PMyPayments();
+    }catch(error){alert(error.message||"Erro ao enviar comprovativo.");}
+}
+async function loadP2PAdminPayments() {
+    const host=document.getElementById("p2pAdminPayments");if(!host)return;
+    try{
+        const response=await fetch(`${API_BASE_URL}/api/admin/payments?status=pending`,{headers:p2pAuthHeaders()});
+        const data=await response.json();if(!response.ok)throw new Error(data.detail||"Não foi possível carregar pagamentos administrativos.");
+        const rows=data.payments||[];
+        if(!rows.length){host.textContent="Não há pagamentos pendentes.";return;}
+        host.innerHTML='<table class="pay-table"><thead><tr><th>Utilizador</th><th>Plano</th><th>Método</th><th>Valor</th><th>Referência</th><th>Comprovativo</th><th>Acção</th></tr></thead><tbody>'+rows.map(p=>`<tr><td>${p2pEscape(p.user_name)}<br><small>${p2pEscape(p.user_email)}</small></td><td>${p2pEscape(p.plan_name)}</td><td>${p2pEscape(p2pMethodLabel(p.payment_method))}</td><td>${p2pEscape(p.amount)} ${p2pEscape(p.currency||"AOA")}</td><td>${p2pEscape(p.transaction_reference||"—")}</td><td>${p.proof_file?`<button class="secondary-button" onclick="downloadP2PProof(${p.id})">Ver comprovativo</button>`:"Não enviado"}</td><td><button class="primary-button" onclick="reviewP2PPayment(${p.id},'confirmed')">Confirmar</button><button class="secondary-button" onclick="reviewP2PPayment(${p.id},'rejected')">Rejeitar</button></td></tr>`).join("")+"</tbody></table>";
+    }catch(error){host.textContent=error.message||"Erro no painel administrativo.";}
+}
+async function reviewP2PPayment(paymentId,status) {
+    const note=prompt(status==="confirmed"?"Nota de confirmação (opcional):":"Motivo da rejeição (opcional):")||"";
+    try{
+        const response=await fetch(`${API_BASE_URL}/api/admin/payments/${paymentId}/review`,{method:"PATCH",headers:p2pAuthHeaders({"Content-Type":"application/json"}),body:JSON.stringify({status,admin_note:note})});
+        const data=await response.json();if(!response.ok)throw new Error(data.detail||"Falha ao analisar pagamento.");
+        alert(data.message||"Pagamento actualizado.");await loadP2PAdminPayments();await loadP2PMyPayments();
+    }catch(error){alert(error.message||"Erro ao analisar pagamento.");}
+}
+async function downloadP2PProof(paymentId) {
+    try{
+        const response=await fetch(`${API_BASE_URL}/api/admin/payments/${paymentId}/proof`,{headers:p2pAuthHeaders()});
+        if(!response.ok){const d=await response.json().catch(()=>({}));throw new Error(d.detail||"Não foi possível abrir o comprovativo.");}
+        const blob=await response.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`comprovativo-${paymentId}`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+    }catch(error){alert(error.message||"Erro ao descarregar comprovativo.");}
+}
