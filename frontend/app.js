@@ -5,8 +5,8 @@
    ============================================================ */
 
 const API_BASE_URL = "https://studiomusic.onrender.com";
-const MAX_PROMPT_LENGTH = 4000;
-const MAX_LYRICS_LENGTH = 10000;
+const MAX_PROMPT_LENGTH = 1024;
+const MAX_LYRICS_LENGTH = 5000;
 
 let allSongs = [];
 let communitySongs = [];
@@ -35,6 +35,9 @@ let statusTitle;
 let statusMessage;
 
 let generateBtn;
+let referenceAudioInput = null;
+let voiceSampleInput = null;
+let voiceAuthorizationCheckbox = null;
 
 let audioPlayerContainer;
 let playerTitle;
@@ -109,6 +112,56 @@ function initializeElements() {
     statusMessage = document.getElementById("statusMessage");
 
     generateBtn = document.getElementById("generateBtn");
+
+    // Provide a reference-audio control even if the original page markup
+    // does not include one yet. The selected file is sent to the backend.
+    referenceAudioInput = document.getElementById("referenceAudioInput");
+    if (!referenceAudioInput && generateBtn && generateBtn.parentElement) {
+        const referenceWrap = document.createElement("div");
+        referenceWrap.id = "referenceAudioUploadWrapper";
+        referenceWrap.style.margin = "12px 0";
+        const referenceLabel = document.createElement("label");
+        referenceLabel.htmlFor = "referenceAudioInput";
+        referenceLabel.textContent = "Áudio de referência (MP3/M4A, menos de 10 MB; a Mureka utiliza um excerto de 30 segundos)";
+        referenceLabel.style.display = "block";
+        referenceLabel.style.marginBottom = "6px";
+        referenceAudioInput = document.createElement("input");
+        referenceAudioInput.type = "file";
+        referenceAudioInput.id = "referenceAudioInput";
+        referenceAudioInput.accept = ".mp3,.m4a,audio/mpeg,audio/mp4";
+        referenceAudioInput.style.maxWidth = "100%";
+        referenceWrap.append(referenceLabel, referenceAudioInput);
+        generateBtn.parentElement.insertBefore(referenceWrap, generateBtn);
+    }
+
+    voiceSampleInput = document.getElementById("voiceSampleInput");
+    if (!voiceSampleInput && generateBtn && generateBtn.parentElement) {
+        const voiceWrap = document.createElement("div");
+        voiceWrap.id = "voiceSampleUploadWrapper";
+        voiceWrap.style.margin = "12px 0";
+        const voiceLabel = document.createElement("label");
+        voiceLabel.htmlFor = "voiceSampleInput";
+        voiceLabel.textContent = "Amostra vocal opcional (MP3/M4A, 15–30 segundos, menos de 10 MB)";
+        voiceLabel.style.display = "block";
+        voiceLabel.style.marginBottom = "6px";
+        voiceSampleInput = document.createElement("input");
+        voiceSampleInput.type = "file";
+        voiceSampleInput.id = "voiceSampleInput";
+        voiceSampleInput.accept = ".mp3,.m4a,audio/mpeg,audio/mp4";
+        voiceSampleInput.style.maxWidth = "100%";
+        voiceAuthorizationCheckbox = document.createElement("input");
+        voiceAuthorizationCheckbox.type = "checkbox";
+        voiceAuthorizationCheckbox.id = "voiceSampleAuthorized";
+        const authorizationLabel = document.createElement("label");
+        authorizationLabel.htmlFor = "voiceSampleAuthorized";
+        authorizationLabel.textContent = "Confirmo que tenho autorização para utilizar esta voz.";
+        authorizationLabel.style.marginLeft = "6px";
+        const authorizationRow = document.createElement("div");
+        authorizationRow.style.marginTop = "6px";
+        authorizationRow.append(voiceAuthorizationCheckbox, authorizationLabel);
+        voiceWrap.append(voiceLabel, voiceSampleInput, authorizationRow);
+        generateBtn.parentElement.insertBefore(voiceWrap, generateBtn);
+    }
 
     audioPlayerContainer = document.getElementById("audioPlayerContainer");
     playerTitle = document.getElementById("playerTitle");
@@ -509,7 +562,7 @@ async function generateMusic() {
         return;
     }
     if (prompt.length > MAX_PROMPT_LENGTH) {
-        showToast(`O prompt não pode ultrapassar ${MAX_PROMPT_LENGTH} caracteres.`, "warning");
+        showToast(`O prompt não pode ultrapassar ${MAX_PROMPT_LENGTH} caracteres (limite da Mureka).`, "warning");
         return;
     }
     if (lyrics.length > MAX_LYRICS_LENGTH) {
@@ -535,6 +588,54 @@ async function generateMusic() {
     showGenerationStatus("A enviar pedido...", "A preparar a geração da tua música.", true);
 
     try {
+        // If the page contains an audio-reference input, upload the actual file
+        // to the backend first; the backend forwards it to Mureka and returns
+        // the provider reference ID used by the generation request.
+        let sourceReferenceId = null;
+        const referenceInput = referenceAudioInput || document.querySelector(
+            "#sourceAudioInput, #audioReference, input[type='file'][accept*='audio']"
+        );
+        const referenceFile = referenceInput?.files?.[0];
+        if (referenceFile) {
+            const uploadForm = new FormData();
+            uploadForm.append("file", referenceFile);
+            uploadForm.append("purpose", instrumental ? "instrumental" : "reference");
+            const uploadResponse = await fetch(`${API_BASE_URL}/api/music/upload-source`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
+                body: uploadForm
+            });
+            const uploadData = await parseResponse(uploadResponse);
+            if (!uploadResponse.ok || !uploadData?.reference_id) {
+                throw new Error(getErrorMessage(uploadData, "Não foi possível enviar o áudio de referência para a Mureka."));
+            }
+            sourceReferenceId = uploadData.reference_id;
+        }
+
+        let vocalId = null;
+        const voiceFile = voiceSampleInput?.files?.[0];
+        if (voiceFile && instrumental) {
+            throw new Error("A amostra vocal só pode ser usada numa geração com voz, não numa música instrumental.");
+        }
+        if (voiceFile) {
+            if (!voiceAuthorizationCheckbox?.checked) {
+                throw new Error("Confirma que tens autorização para utilizar a voz da amostra.");
+            }
+            const voiceForm = new FormData();
+            voiceForm.append("file", voiceFile);
+            voiceForm.append("authorized", "true");
+            const voiceResponse = await fetch(`${API_BASE_URL}/api/music/clone-voice`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
+                body: voiceForm
+            });
+            const voiceData = await parseResponse(voiceResponse);
+            if (!voiceResponse.ok || !voiceData?.vocal_id) {
+                throw new Error(getErrorMessage(voiceData, "Não foi possível criar o perfil vocal na Mureka."));
+            }
+            vocalId = voiceData.vocal_id;
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/music/generate`, {
             method: "POST",
             headers: {
@@ -542,7 +643,7 @@ async function generateMusic() {
                 "Accept": "application/json",
                 "Authorization": `Bearer ${token}`
             },
-            body: JSON.stringify({ prompt, title: title || null, duration, instrumental, lyrics })
+            body: JSON.stringify({ prompt, title: title || null, duration, instrumental, lyrics, source_reference_id: sourceReferenceId, vocal_id: vocalId })
         });
         const data = await parseResponse(response);
 
@@ -3076,5 +3177,4 @@ window.initializeVoiceUpload = initializeVoiceUpload;
 window.getLyrics = getLyrics;
 window.resetLyrics = resetLyrics;
 window.downloadAudio = downloadAudio;
-
 
