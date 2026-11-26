@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suporte | StudioMusic.AI</title>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="suporte.css">
+</head>
+<body class="support-page">
+<header class="support-topbar">
+  <a class="support-brand" href="index.html"><span class="material-icons">graphic_eq</span> StudioMusic<span>.AI</span></a>
+  <a href="index.html" class="support-back"><span class="material-icons">arrow_back</span> Voltar à plataforma</a>
+</header>
+<main class="support-shell">
+  <section class="support-heading"><div><span class="support-eyebrow">CENTRO DE AJUDA</span><h1>Como podemos ajudar?</h1><p>Cria um pedido e acompanha toda a conversa com a nossa equipa num só lugar.</p></div><button id="newTicketBtn" class="support-primary"><span class="material-icons">add</span> Novo pedido</button></section>
+  <div class="support-layout">
+    <aside class="support-panel support-list-panel"><div class="support-panel-title"><h2>Os meus pedidos</h2><button id="refreshTickets" class="support-icon-btn" title="Actualizar"><span class="material-icons">refresh</span></button></div><div id="ticketList" class="ticket-list"><p class="support-muted">A carregar pedidos...</p></div></aside>
+    <section class="support-panel support-conversation">
+      <div id="emptyConversation" class="support-empty"><span class="material-icons">support_agent</span><h2>Suporte StudioMusic</h2><p>Selecciona um pedido para consultar a conversa ou cria um novo pedido.</p></div>
+      <div id="ticketConversation" class="hidden">
+        <div class="conversation-heading"><div><span id="ticketNumber" class="support-eyebrow"></span><h2 id="ticketSubject"></h2><p id="ticketMeta"></p></div><span id="ticketStatus" class="ticket-status"></span></div>
+        <div id="messageList" class="message-list" aria-live="polite"></div>
+        <form id="replyForm" class="reply-form"><textarea id="replyMessage" rows="3" maxlength="4000" placeholder="Escreve a tua mensagem..." required></textarea><div><small>Evita partilhar palavras-passe ou dados de pagamento.</small><button class="support-primary" type="submit"><span class="material-icons">send</span> Enviar</button></div></form>
+      </div>
+    </section>
+  </div>
+</main>
+<div id="ticketModal" class="support-modal hidden"><form id="ticketForm" class="support-modal-card"><button type="button" id="closeTicketModal" class="support-modal-close" aria-label="Fechar"><span class="material-icons">close</span></button><span class="support-eyebrow">NOVO PEDIDO</span><h2>Fala com a nossa equipa</h2><label for="ticketSubjectInput">Assunto</label><input id="ticketSubjectInput" maxlength="140" minlength="4" required placeholder="Ex.: Não consigo gerar uma música"><label for="ticketCategory">Categoria</label><select id="ticketCategory"><option value="technical">Problema técnico</option><option value="generation">Geração de música</option><option value="payments">Pagamentos</option><option value="account">Conta e acesso</option><option value="other">Outro assunto</option></select><label for="ticketDescription">Descreve o problema</label><textarea id="ticketDescription" rows="5" maxlength="4000" minlength="10" required placeholder="Explica o que aconteceu e o que estavas a tentar fazer..."></textarea><p id="ticketFormError" class="support-error" role="alert"></p><button class="support-primary support-submit" type="submit">Enviar pedido</button></form></div>
+<div id="supportToast" class="support-toast" role="status"></div>
+<script src="suporte.js"></script>
+</body></html>
