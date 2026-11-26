@@ -3312,7 +3312,7 @@ async function uploadP2PProof(paymentId) {
     try{
         const response=await fetch(`${API_BASE_URL}/api/payments/${paymentId}/proof`,{method:"POST",headers:p2pAuthHeaders(),body:form});
         const data=await response.json();if(!response.ok)throw new Error(data.detail||"Falha ao enviar comprovativo.");
-        alert(data.message||"Comprovativo enviado.");await loadP2PMyPayments();
+        alert(data.verification_message||data.message||"Comprovativo enviado. Aguarda a verificação do recebimento.");await loadP2PMyPayments();
     }catch(error){alert(error.message||"Erro ao enviar comprovativo.");}
 }
 async function loadP2PAdminPayments() {
