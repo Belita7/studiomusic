@@ -1823,3 +1823,14 @@ textarea:focus-visible {
 .support-admin-reply textarea{width:100%;resize:vertical}
 .support-admin-empty{padding:60px 15px;text-align:center;color:var(--text-secondary,#a7adb8)}
 @media(max-width:900px){.support-admin-layout{grid-template-columns:1fr}}
+
+
+/* Metadados de auditoria dos pagamentos */
+.payment-audit-meta {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-muted, #8b8b96);
+    font-size: 11px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
