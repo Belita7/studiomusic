@@ -2240,6 +2240,20 @@ def create_payment(
         if cursor.fetchone() is None:
             raise ValueError("Plano inexistente ou indisponível.")
 
+        normalized_reference = (
+            re.sub(r"[^A-Za-z0-9]", "", transaction_reference.strip()).upper()
+            if transaction_reference else None
+        )
+        if normalized_reference and payment_provider:
+            duplicate_reference = cursor.execute("""
+                SELECT id FROM payments
+                WHERE payment_provider = ?
+                  AND transaction_reference_normalized = ?
+                LIMIT 1
+            """, (payment_provider, normalized_reference)).fetchone()
+            if duplicate_reference:
+                raise ValueError("Esta referência de pagamento já foi utilizada.")
+
         cursor.execute("""
             INSERT INTO payments (
                 user_id,
@@ -2264,7 +2278,7 @@ def create_payment(
             payment_method,
             payment_provider,
             transaction_reference,
-            re.sub(r"[^A-Za-z0-9]", "", transaction_reference.strip()).upper() if transaction_reference else None,
+            normalized_reference,
             provider_transaction_id,
             proof_file,
             now,
