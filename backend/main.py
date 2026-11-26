@@ -4790,6 +4790,7 @@ def process_paddle_transaction(
                 ON plans.id = payments.plan_id
 
             WHERE payments.id = ?
+            FOR UPDATE OF payments
             """,
             (local_payment_id,)
         )
@@ -5169,6 +5170,8 @@ def process_paddle_transaction(
             subscription_id = ?,
             provider_transaction_id = ?,
             confirmed_at = ?,
+            verification_source = 'provider_webhook',
+            verified_at = ?,
             updated_at = ?
 
         WHERE id = ?
@@ -5178,6 +5181,7 @@ def process_paddle_transaction(
             float(amount),
             subscription_local_id,
             transaction_id,
+            now,
             now,
             now,
             payment["id"]
