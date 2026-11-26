@@ -28,24 +28,58 @@ const confirmPaymentBtn = document.getElementById("confirmPaymentBtn");
 
 let selectedPlanId = null;
 
-// Taxa USD/AOA de referência (actualização diária; não altera o preço cobrado).
+// Taxa de referência USD/AOA publicada diariamente. O cache evita
+// chamadas repetidas e é renovado automaticamente após 24 horas.
 const USD_AOA_RATE_URL = "https://theratesapi.com/api/latest?base=USD&symbols=AOA";
+const USD_AOA_CACHE_KEY = "studiomusic_usd_aoa_rate_v1";
+const USD_AOA_CACHE_TTL = 24 * 60 * 60 * 1000;
 let usdToAoaRate = null;
 let usdToAoaRateDate = null;
 
 async function loadUsdAoaRate() {
+    let cached = null;
+    try {
+        cached = JSON.parse(localStorage.getItem(USD_AOA_CACHE_KEY) || "null");
+        if (cached && Number.isFinite(Number(cached.rate)) && Date.now() - Number(cached.savedAt) < USD_AOA_CACHE_TTL) {
+            usdToAoaRate = Number(cached.rate);
+            usdToAoaRateDate = cached.date || null;
+            return;
+        }
+    } catch (_) {
+        cached = null;
+    }
+
     try {
         const response = await fetch(USD_AOA_RATE_URL, { cache: "no-store" });
         if (!response.ok) throw new Error("Falha ao obter taxa cambial.");
         const data = await response.json();
         const rate = Number(data?.rates?.AOA);
-        if (!Number.isFinite(rate) || rate <= 0) throw new Error("Taxa USD/AOA inválida.");
+        if (!Number.isFinite(rate) || rate <= 0 || data?.base !== "USD") {
+            throw new Error("Taxa USD/AOA inválida.");
+        }
         usdToAoaRate = rate;
-        usdToAoaRateDate = data.date || data.updated || null;
+        usdToAoaRateDate = data.date || null;
+        try {
+            localStorage.setItem(USD_AOA_CACHE_KEY, JSON.stringify({
+                rate,
+                date: usdToAoaRateDate,
+                savedAt: Date.now()
+            }));
+        } catch (_) {
+            // A taxa continua disponível nesta sessão mesmo se o browser
+            // não permitir guardar o cache local.
+        }
     } catch (error) {
         console.warn("Taxa cambial USD/AOA indisponível:", error);
-        usdToAoaRate = null;
-        usdToAoaRateDate = null;
+        // Se a rede falhar, utilizar a última taxa guardada, identificando
+        // a data da cotação para não apresentar um valor inventado.
+        if (cached && Number.isFinite(Number(cached.rate))) {
+            usdToAoaRate = Number(cached.rate);
+            usdToAoaRateDate = cached.date || null;
+        } else {
+            usdToAoaRate = null;
+            usdToAoaRateDate = null;
+        }
     }
 }
 
@@ -57,7 +91,11 @@ function getPlanUsdEquivalent(plan) {
     if (currency === "AOA") usd = amount / usdToAoaRate;
     else if (currency === "USD") usd = amount;
     else return "";
-    return `<div class="plan-price-usd">≈ ${usd.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })} USD</div>`;
+    const formattedUsd = usd.toLocaleString("pt-PT", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    return `<div class="plan-price-usd">≈ ${formattedUsd} USD</div>`;
 }
 
 function renderExchangeRateInfo() {
@@ -70,7 +108,7 @@ function renderExchangeRateInfo() {
     }
     if (!info) return;
     info.textContent = usdToAoaRate
-        ? `Taxa de referência: 1 USD ≈ ${usdToAoaRate.toLocaleString("pt-PT", { maximumFractionDigits: 2 })} AOA${usdToAoaRateDate ? ` · data: ${usdToAoaRateDate}` : ""}. A conversão é indicativa; o preço cobrado permanece na moeda do plano e o banco/provedor pode aplicar a sua própria taxa.`
+        ? `Câmbio de referência do dia: 1 USD ≈ ${usdToAoaRate.toLocaleString("pt-PT", { maximumFractionDigits: 2 })} AOA${usdToAoaRateDate ? ` · cotação: ${usdToAoaRateDate}` : ""}. Valores em USD são estimativas; o preço cobrado continua na moeda do plano.`
         : "Taxa USD/AOA temporariamente indisponível. Os preços dos planos continuam apresentados na moeda original.";
 }
 
@@ -197,8 +235,11 @@ function renderPlans(plans) {
         card.innerHTML = `
             <div>
                 <h3 class="plan-title">${escapeHTML(plan.name)}</h3>
-                <div class="plan-price">${Number(plan.price || 0).toLocaleString("pt-PT")} <span>${escapeHTML(plan.currency || "AOA")} / ${Number(plan.duration_days || 0)} dias</span></div>
+                <div class="plan-price-main">
+                    <strong>${Number(plan.price || 0).toLocaleString("pt-PT")} ${escapeHTML(plan.currency || "AOA")}</strong>
+                </div>
                 ${getPlanUsdEquivalent(plan)}
+                <div class="plan-duration">${Number(plan.duration_days || 0)} dias</div>
                 <p class="plan-desc">${escapeHTML(plan.description || "Sem descrição")}</p>
                 <ul class="plan-features">
                     <li><span class="material-icons">check_circle</span> Duração máx. de música: ${plan.max_song_duration}s</li>
