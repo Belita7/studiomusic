@@ -956,6 +956,9 @@ function renderPayments() {
                             )
                             : "—"
                     }
+                    ${payment.payment_proof_hash ? `<small class="payment-audit-meta">Hash: ${esc(String(payment.payment_proof_hash).slice(0, 14))}…</small>` : ""}
+                    ${payment.transaction_reference ? `<small class="payment-audit-meta">Ref.: ${esc(payment.transaction_reference)}</small>` : ""}
+                    ${payment.verification_source ? `<small class="payment-audit-meta">Verificação: ${esc(payment.verification_source === "provider_webhook" ? "Webhook do fornecedor" : "Manual")}</small>` : ""}
                 </td>
 
                 <td>
