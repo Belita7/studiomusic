@@ -945,7 +945,7 @@ def update_user_photo(
 def create_song(
     title: str,
     prompt: str,
-    model: str = "mureka-9.5",
+    model: str = "mureka-7.6",
     duration: int = 60,
     instrumental: bool = False,
     status: str = "pending",
