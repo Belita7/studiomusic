@@ -4510,9 +4510,14 @@ async def upload_payment_proof(
                 proof_hash=proof_hash
             )
 
-        except Exception:
+        except Exception as error:
 
             filepath.unlink(missing_ok=True)
+            if getattr(error, "pgcode", None) == "23505":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Este comprovativo ou referência já está associado a outro pagamento."
+                )
             raise
 
         if not updated:
@@ -5358,7 +5363,19 @@ async def paddle_webhook(
                 ).fetchone()
                 if existing and existing["processing_status"] == "processed":
                     return {"success": True, "duplicate": True}
-                raise HTTPException(status_code=409, detail="Este evento já está a ser processado ou aguarda nova tentativa.")
+                if existing and existing["processing_status"] == "failed":
+                    connection.execute(
+                        """
+                        UPDATE paddle_webhook_events
+                        SET processing_status = 'received',
+                            error_message = NULL,
+                            received_at = ?
+                        WHERE event_id = ? AND processing_status = 'failed'
+                        """,
+                        (now, event_id)
+                    )
+                else:
+                    raise HTTPException(status_code=409, detail="Este evento já está a ser processado.")
 
             # ------------------------------------------------
             # PROCESSAR EVENTO AUTENTICADO
