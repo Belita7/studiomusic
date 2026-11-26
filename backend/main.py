@@ -585,6 +585,21 @@ class AdminActiveRequest(BaseModel):
     is_active: bool
 
 
+class SupportTicketCreate(BaseModel):
+    subject: str = Field(min_length=4, max_length=140)
+    category: str = Field(pattern="^(technical|generation|payments|account|other)$")
+    description: str = Field(min_length=10, max_length=4000)
+
+
+class SupportMessageCreate(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+
+
+class SupportStatusUpdate(BaseModel):
+    status: str = Field(pattern="^(open|in_progress|waiting_user|resolved|closed)$")
+    priority: Optional[str] = Field(default=None, pattern="^(low|normal|high|urgent)$")
+
+
 # ============================================================
 # MODELOS — PLANOS E PAGAMENTOS
 # ============================================================
@@ -942,6 +957,140 @@ def require_admin(
         )
 
     return user
+
+
+# ============================================================
+# SUPORTE — TICKETS E CONVERSAS
+# ============================================================
+
+SUPPORT_CATEGORIES = {
+    "technical": "Problema técnico",
+    "generation": "Geração de música",
+    "payments": "Pagamentos",
+    "account": "Conta e acesso",
+    "other": "Outro assunto"
+}
+
+
+def support_ticket_payload(ticket, messages=None):
+    result = dict(ticket)
+    result["ticket_number"] = str(result.get("ticket_number") or "")
+    result["messages"] = [dict(item) for item in (messages or [])]
+    return result
+
+
+@app.post("/api/support/tickets")
+def support_create_ticket(data: SupportTicketCreate, user=Depends(get_current_user)):
+    now = datetime.utcnow().isoformat()
+    ticket_number = f"ST-{datetime.utcnow().strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
+    with get_connection() as connection:
+        cursor = connection.execute(
+            """INSERT INTO support_tickets
+               (ticket_number, user_id, subject, category, description, status, priority, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, 'open', 'normal', ?, ?)""",
+            (ticket_number, user["id"], data.subject.strip(), data.category,
+             data.description.strip(), now, now)
+        )
+        ticket_id = cursor.lastrowid
+        connection.execute(
+            """INSERT INTO support_messages (ticket_id, sender_id, message, created_at)
+               VALUES (?, ?, ?, ?)""",
+            (ticket_id, user["id"], data.description.strip(), now)
+        )
+        connection.commit()
+    return {"success": True, "ticket_id": ticket_id, "ticket_number": ticket_number}
+
+
+@app.get("/api/support/tickets")
+def support_list_tickets(user=Depends(get_current_user)):
+    with get_connection() as connection:
+        if bool(user.get("is_admin", 0)):
+            rows = connection.execute(
+                """SELECT t.*, u.name AS user_name, u.email AS user_email,
+                          (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id=t.id) AS message_count
+                   FROM support_tickets t JOIN users u ON u.id=t.user_id
+                   ORDER BY CASE WHEN t.status IN ('open','in_progress','waiting_user') THEN 0 ELSE 1 END,
+                            CASE t.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,
+                            t.updated_at DESC"""
+            ).fetchall()
+        else:
+            rows = connection.execute(
+                """SELECT t.*,
+                          (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id=t.id) AS message_count
+                   FROM support_tickets t WHERE t.user_id=? ORDER BY t.updated_at DESC""",
+                (user["id"],)
+            ).fetchall()
+    return {"success": True, "tickets": [dict(row) for row in rows]}
+
+
+@app.get("/api/support/tickets/{ticket_id}")
+def support_get_ticket(ticket_id: int, user=Depends(get_current_user)):
+    with get_connection() as connection:
+        ticket = connection.execute(
+            """SELECT t.*, u.name AS user_name, u.email AS user_email
+               FROM support_tickets t JOIN users u ON u.id=t.user_id WHERE t.id=?""",
+            (ticket_id,)
+        ).fetchone()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket não encontrado.")
+        if not bool(user.get("is_admin", 0)) and int(ticket["user_id"]) != int(user["id"]):
+            raise HTTPException(status_code=404, detail="Ticket não encontrado.")
+        messages = connection.execute(
+            """SELECT m.id, m.ticket_id, m.sender_id, m.message, m.created_at,
+                      u.name AS sender_name, u.is_admin AS sender_is_admin
+               FROM support_messages m JOIN users u ON u.id=m.sender_id
+               WHERE m.ticket_id=? ORDER BY m.created_at ASC, m.id ASC""",
+            (ticket_id,)
+        ).fetchall()
+    return {"success": True, "ticket": dict(ticket), "messages": [dict(row) for row in messages]}
+
+
+@app.post("/api/support/tickets/{ticket_id}/messages")
+def support_send_message(ticket_id: int, data: SupportMessageCreate, user=Depends(get_current_user)):
+    now = datetime.utcnow().isoformat()
+    with get_connection() as connection:
+        ticket = connection.execute(
+            "SELECT * FROM support_tickets WHERE id=?", (ticket_id,)
+        ).fetchone()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket não encontrado.")
+        is_admin = bool(user.get("is_admin", 0))
+        if not is_admin and int(ticket["user_id"]) != int(user["id"]):
+            raise HTTPException(status_code=404, detail="Ticket não encontrado.")
+        if ticket["status"] == "closed":
+            raise HTTPException(status_code=409, detail="Este ticket está fechado. Solicita à equipa que o reabra.")
+        connection.execute(
+            "INSERT INTO support_messages (ticket_id, sender_id, message, created_at) VALUES (?, ?, ?, ?)",
+            (ticket_id, user["id"], data.message.strip(), now)
+        )
+        new_status = "waiting_user" if is_admin else "open"
+        connection.execute(
+            "UPDATE support_tickets SET status=?, updated_at=? WHERE id=?",
+            (new_status, now, ticket_id)
+        )
+        connection.commit()
+    return {"success": True, "message": "Mensagem enviada."}
+
+
+@app.patch("/api/admin/support/tickets/{ticket_id}")
+def support_admin_update_ticket(ticket_id: int, data: SupportStatusUpdate, admin=Depends(require_admin)):
+    now = datetime.utcnow().isoformat()
+    with get_connection() as connection:
+        ticket = connection.execute("SELECT id FROM support_tickets WHERE id=?", (ticket_id,)).fetchone()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket não encontrado.")
+        if data.priority:
+            connection.execute(
+                "UPDATE support_tickets SET status=?, priority=?, updated_at=? WHERE id=?",
+                (data.status, data.priority, now, ticket_id)
+            )
+        else:
+            connection.execute(
+                "UPDATE support_tickets SET status=?, updated_at=? WHERE id=?",
+                (data.status, now, ticket_id)
+            )
+        connection.commit()
+    return {"success": True, "message": "Ticket actualizado."}
 
 
 # ============================================================
