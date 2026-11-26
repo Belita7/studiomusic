@@ -4423,10 +4423,10 @@ async def upload_payment_proof(
             detail="Este método não aceita comprovativo manual."
         )
 
-    if payment.get("proof_file"):
+    if payment.get("proof_file") and payment.get("payment_proof_hash"):
         raise HTTPException(
             status_code=409,
-            detail="Este pagamento já possui um comprovativo."
+            detail="Este pagamento já possui um comprovativo registado."
         )
 
     if file.content_type not in ALLOWED_PAYMENT_PROOF_TYPES:
