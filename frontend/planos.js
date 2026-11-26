@@ -230,7 +230,7 @@ function renderPlans(plans) {
     plans.forEach(plan => {
         const isFree = Number(plan.price) === 0;
         const card = document.createElement("div");
-        card.className = `plan-card ${plan.code === 'basic' ? 'featured' : ''}`;
+        card.className = `plan-card ${plan.code === 'starter' ? 'featured' : ''}`;
 
         card.innerHTML = `
             <div>
@@ -243,7 +243,7 @@ function renderPlans(plans) {
                 <p class="plan-desc">${escapeHTML(plan.description || "Sem descrição")}</p>
                 <ul class="plan-features">
                     <li><span class="material-icons">check_circle</span> Duração máx. de música: ${plan.max_song_duration}s</li>
-                    <li><span class="material-icons">check_circle</span> Limite mensal: ${plan.monthly_song_limit} músicas</li>
+                    <li><span class="material-icons">check_circle</span> Inclui ${plan.monthly_song_limit} músicas por período de 30 dias</li>
                 </ul>
             </div>
             <button class="btn-submit select-plan-btn" data-id="${Number(plan.id)}" data-name="${escapeHTML(plan.name)}" data-price="${Number(plan.price)}">
