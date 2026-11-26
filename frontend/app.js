@@ -3299,8 +3299,9 @@ async function loadP2PMyPayments() {
         const rows=data.payments||[];
         if(!rows.length){host.textContent="Ainda não existem pedidos de pagamento.";return;}
         host.innerHTML='<table class="pay-table"><thead><tr><th>Pedido</th><th>Plano</th><th>Método</th><th>Valor</th><th>Estado</th><th>Comprovativo</th></tr></thead><tbody>'+rows.map(p=>{
-            const canProof=p.status==="pending" && ["bank_transfer","unifi_transfer","multicaixa_express","usdc"].includes(p.payment_method) && !p.proof_file;
-            return `<tr><td>#${p.id}</td><td>${p2pEscape(p.plan_name||p.plan_code)}</td><td>${p2pEscape(p2pMethodLabel(p.payment_method))}</td><td>${p2pEscape(p.amount)} ${p2pEscape(p.currency||"AOA")}</td><td>${p2pEscape(p.status)}</td><td>${canProof?`<input class="pay-proof-input" type="file" accept=".jpg,.jpeg,.png,.pdf" id="p2p-proof-${p.id}"><button class="secondary-button" onclick="uploadP2PProof(${p.id})">Enviar</button>`:p.proof_file?"Enviado":"—"}</td></tr>`;
+            const canProof=p.status==="pending" && ["bank_transfer","unifi_transfer","multicaixa_express","usdc"].includes(p.payment_method) && !(p.proof_file && p.payment_proof_hash);
+            const paymentStatus=p.status==="pending" && p.proof_file?"A aguardar verificação":p.status;
+            return `<tr><td>#${p.id}</td><td>${p2pEscape(p.plan_name||p.plan_code)}</td><td>${p2pEscape(p2pMethodLabel(p.payment_method))}</td><td>${p2pEscape(p.amount)} ${p2pEscape(p.currency||"AOA")}</td><td>${p2pEscape(paymentStatus)}</td><td>${canProof?`<input class="pay-proof-input" type="file" accept=".jpg,.jpeg,.png,.pdf" id="p2p-proof-${p.id}"><button class="secondary-button" onclick="uploadP2PProof(${p.id})">Enviar</button>`:p.proof_file?"Enviado — a aguardar verificação":"—"}</td></tr>`;
         }).join("")+"</tbody></table>";
     } catch(error){host.textContent=error.message||"Erro ao carregar histórico.";}
 }
@@ -3322,11 +3323,12 @@ async function loadP2PAdminPayments() {
         const rows=(data.payments||[]).filter(p=>["bank_transfer","unifi_transfer","multicaixa_express","usdc"].includes(p.payment_method));
         document.getElementById("p2pAdminPanel")?.classList.remove("hidden");
         if(!rows.length){host.textContent="Não há pagamentos P2P pendentes.";return;}
-        host.innerHTML='<table class="pay-table"><thead><tr><th>Utilizador</th><th>Plano</th><th>Método</th><th>Valor</th><th>Referência</th><th>Comprovativo</th><th>Acção</th></tr></thead><tbody>'+rows.map(p=>`<tr><td>${p2pEscape(p.user_name)}<br><small>${p2pEscape(p.user_email)}</small></td><td>${p2pEscape(p.plan_name)}</td><td>${p2pEscape(p2pMethodLabel(p.payment_method))}</td><td>${p2pEscape(p.amount)} ${p2pEscape(p.currency||"AOA")}</td><td>${p2pEscape(p.transaction_reference||"—")}</td><td>${p.proof_file?`<button class="secondary-button" onclick="downloadP2PProof(${p.id})">Ver comprovativo</button>`:"Não enviado"}</td><td><button class="primary-button" onclick="reviewP2PPayment(${p.id},'confirmed')">Confirmar</button><button class="secondary-button" onclick="reviewP2PPayment(${p.id},'rejected')">Rejeitar</button></td></tr>`).join("")+"</tbody></table>";
+        host.innerHTML='<table class="pay-table"><thead><tr><th>Utilizador</th><th>Plano</th><th>Método</th><th>Valor</th><th>Referência</th><th>Comprovativo / auditoria</th><th>Acção</th></tr></thead><tbody>'+rows.map(p=>`<tr><td>${p2pEscape(p.user_name)}<br><small>${p2pEscape(p.user_email)}</small></td><td>${p2pEscape(p.plan_name)}</td><td>${p2pEscape(p2pMethodLabel(p.payment_method))}</td><td>${p2pEscape(p.amount)} ${p2pEscape(p.currency||"AOA")}</td><td>${p2pEscape(p.transaction_reference||"—")}</td><td>${p.proof_file?`<button class="secondary-button" onclick="downloadP2PProof(${p.id})">Ver comprovativo</button><br><small>Hash: ${p2pEscape(String(p.payment_proof_hash||"sem hash").slice(0,14))}…</small>`:"Não enviado"}</td><td>${p.proof_file&&p.payment_proof_hash?`<button class="primary-button" onclick="reviewP2PPayment(${p.id},'confirmed')">Confirmar</button>`:"A aguardar comprovativo"}<button class="secondary-button" onclick="reviewP2PPayment(${p.id},'rejected')">Rejeitar</button></td></tr>`).join("")+"</tbody></table>";
     }catch(error){host.textContent=error.message||"Erro no painel administrativo.";}
 }
 async function reviewP2PPayment(paymentId,status) {
-    const note=prompt(status==="confirmed"?"Nota de confirmação (opcional):":"Motivo da rejeição (opcional):")||"";
+    const note=prompt(status==="confirmed"?"Nota obrigatória: confirma que verificaste a entrada do valor no extracto/conta de recebimento:":"Motivo da rejeição (opcional):")||"";
+    if(status==="confirmed" && note.trim().length<8){alert("Para confirmar, escreve uma nota de auditoria com pelo menos 8 caracteres e verifica o recebimento real.");return;}
     try{
         const response=await fetch(`${API_BASE_URL}/api/admin/payments/${paymentId}/review`,{method:"PATCH",headers:p2pAuthHeaders({"Content-Type":"application/json"}),body:JSON.stringify({status,admin_note:note})});
         const data=await response.json();if(!response.ok)throw new Error(data.detail||"Falha ao analisar pagamento.");
