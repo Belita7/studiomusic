@@ -116,54 +116,60 @@ function initializeElements() {
 
     generateBtn = document.getElementById("generateBtn");
 
-    // Provide a reference-audio control even if the original page markup
-    // does not include one yet. The selected file is sent to the backend.
+    // Uploads de áudio apresentados numa grelha própria, fora da área do botão.
+    let audioUploadsGrid = document.getElementById("audioUploadsGrid");
+    if (!audioUploadsGrid && generateBtn && generateBtn.parentElement) {
+        audioUploadsGrid = document.createElement("div");
+        audioUploadsGrid.id = "audioUploadsGrid";
+        audioUploadsGrid.className = "audio-uploads-grid";
+        generateBtn.parentElement.parentElement.insertBefore(audioUploadsGrid, generateBtn.parentElement);
+    }
+
     referenceAudioInput = document.getElementById("referenceAudioInput");
-    if (!referenceAudioInput && generateBtn && generateBtn.parentElement) {
+    if (!referenceAudioInput && audioUploadsGrid) {
         const referenceWrap = document.createElement("div");
         referenceWrap.id = "referenceAudioUploadWrapper";
-        referenceWrap.style.margin = "12px 0";
+        referenceWrap.className = "audio-upload-card";
         const referenceLabel = document.createElement("label");
         referenceLabel.htmlFor = "referenceAudioInput";
-        referenceLabel.textContent = "Áudio de referência (MP3/M4A, menos de 10 MB; a Mureka utiliza um excerto de 30 segundos)";
-        referenceLabel.style.display = "block";
-        referenceLabel.style.marginBottom = "6px";
+        referenceLabel.textContent = "Áudio de referência";
+        const referenceHelp = document.createElement("p");
+        referenceHelp.className = "field-help";
+        referenceHelp.textContent = "MP3 ou M4A, menos de 10 MB. A Mureka utiliza um excerto de até 30 segundos.";
         referenceAudioInput = document.createElement("input");
         referenceAudioInput.type = "file";
         referenceAudioInput.id = "referenceAudioInput";
         referenceAudioInput.accept = ".mp3,.m4a,audio/mpeg,audio/mp4";
-        referenceAudioInput.style.maxWidth = "100%";
-        referenceWrap.append(referenceLabel, referenceAudioInput);
-        generateBtn.parentElement.insertBefore(referenceWrap, generateBtn);
+        referenceWrap.append(referenceLabel, referenceHelp, referenceAudioInput);
+        audioUploadsGrid.appendChild(referenceWrap);
     }
 
     voiceSampleInput = document.getElementById("voiceSampleInput");
-    if (!voiceSampleInput && generateBtn && generateBtn.parentElement) {
+    if (!voiceSampleInput && audioUploadsGrid) {
         const voiceWrap = document.createElement("div");
         voiceWrap.id = "voiceSampleUploadWrapper";
-        voiceWrap.style.margin = "12px 0";
+        voiceWrap.className = "audio-upload-card";
         const voiceLabel = document.createElement("label");
         voiceLabel.htmlFor = "voiceSampleInput";
-        voiceLabel.textContent = "Amostra vocal opcional (MP3/M4A, 15–30 segundos, menos de 10 MB)";
-        voiceLabel.style.display = "block";
-        voiceLabel.style.marginBottom = "6px";
+        voiceLabel.textContent = "Amostra vocal (opcional)";
+        const voiceHelp = document.createElement("p");
+        voiceHelp.className = "field-help";
+        voiceHelp.textContent = "MP3 ou M4A, entre 15 e 30 segundos, menos de 10 MB.";
         voiceSampleInput = document.createElement("input");
         voiceSampleInput.type = "file";
         voiceSampleInput.id = "voiceSampleInput";
         voiceSampleInput.accept = ".mp3,.m4a,audio/mpeg,audio/mp4";
-        voiceSampleInput.style.maxWidth = "100%";
         voiceAuthorizationCheckbox = document.createElement("input");
         voiceAuthorizationCheckbox.type = "checkbox";
         voiceAuthorizationCheckbox.id = "voiceSampleAuthorized";
         const authorizationLabel = document.createElement("label");
         authorizationLabel.htmlFor = "voiceSampleAuthorized";
         authorizationLabel.textContent = "Confirmo que tenho autorização para utilizar esta voz.";
-        authorizationLabel.style.marginLeft = "6px";
         const authorizationRow = document.createElement("div");
-        authorizationRow.style.marginTop = "6px";
+        authorizationRow.className = "audio-authorization";
         authorizationRow.append(voiceAuthorizationCheckbox, authorizationLabel);
-        voiceWrap.append(voiceLabel, voiceSampleInput, authorizationRow);
-        generateBtn.parentElement.insertBefore(voiceWrap, generateBtn);
+        voiceWrap.append(voiceLabel, voiceHelp, voiceSampleInput, authorizationRow);
+        audioUploadsGrid.appendChild(voiceWrap);
     }
 
     audioPlayerContainer = document.getElementById("audioPlayerContainer");
