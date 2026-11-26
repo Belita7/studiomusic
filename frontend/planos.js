@@ -28,6 +28,52 @@ const confirmPaymentBtn = document.getElementById("confirmPaymentBtn");
 
 let selectedPlanId = null;
 
+// Taxa USD/AOA de referência (actualização diária; não altera o preço cobrado).
+const USD_AOA_RATE_URL = "https://theratesapi.com/api/latest?base=USD&symbols=AOA";
+let usdToAoaRate = null;
+let usdToAoaRateDate = null;
+
+async function loadUsdAoaRate() {
+    try {
+        const response = await fetch(USD_AOA_RATE_URL, { cache: "no-store" });
+        if (!response.ok) throw new Error("Falha ao obter taxa cambial.");
+        const data = await response.json();
+        const rate = Number(data?.rates?.AOA);
+        if (!Number.isFinite(rate) || rate <= 0) throw new Error("Taxa USD/AOA inválida.");
+        usdToAoaRate = rate;
+        usdToAoaRateDate = data.date || data.updated || null;
+    } catch (error) {
+        console.warn("Taxa cambial USD/AOA indisponível:", error);
+        usdToAoaRate = null;
+        usdToAoaRateDate = null;
+    }
+}
+
+function getPlanUsdEquivalent(plan) {
+    const amount = Number(plan.price || 0);
+    const currency = String(plan.currency || "AOA").toUpperCase();
+    if (!amount || !Number.isFinite(amount) || !usdToAoaRate) return "";
+    let usd = null;
+    if (currency === "AOA") usd = amount / usdToAoaRate;
+    else if (currency === "USD") usd = amount;
+    else return "";
+    return `<div class="plan-price-usd">≈ ${usd.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })} USD</div>`;
+}
+
+function renderExchangeRateInfo() {
+    let info = document.getElementById("usdAoaRateInfo");
+    if (!info) {
+        info = document.createElement("p");
+        info.id = "usdAoaRateInfo";
+        info.className = "exchange-rate-info";
+        plansGrid?.insertAdjacentElement("beforebegin", info);
+    }
+    if (!info) return;
+    info.textContent = usdToAoaRate
+        ? `Taxa de referência: 1 USD ≈ ${usdToAoaRate.toLocaleString("pt-PT", { maximumFractionDigits: 2 })} AOA${usdToAoaRateDate ? ` · data: ${usdToAoaRateDate}` : ""}. A conversão é indicativa; o preço cobrado permanece na moeda do plano e o banco/provedor pode aplicar a sua própria taxa.`
+        : "Taxa USD/AOA temporariamente indisponível. Os preços dos planos continuam apresentados na moeda original.";
+}
+
 // Obter token
 function getToken() {
     return localStorage.getItem("access_token") || localStorage.getItem("token") || sessionStorage.getItem("access_token") || sessionStorage.getItem("token");
@@ -81,6 +127,8 @@ if (closeModal) {
 // CARREGAR DADOS E PLANOS
 // ============================================================
 async function initPage() {
+    await loadUsdAoaRate();
+    renderExchangeRateInfo();
     const token = getToken();
     if (!token) {
         window.location.href = "login.html";
@@ -149,7 +197,8 @@ function renderPlans(plans) {
         card.innerHTML = `
             <div>
                 <h3 class="plan-title">${escapeHTML(plan.name)}</h3>
-                <div class="plan-price">${Number(plan.price || 0).toLocaleString()} <span>${escapeHTML(plan.currency || "AOA")} / ${Number(plan.duration_days || 0)} dias</span></div>
+                <div class="plan-price">${Number(plan.price || 0).toLocaleString("pt-PT")} <span>${escapeHTML(plan.currency || "AOA")} / ${Number(plan.duration_days || 0)} dias</span></div>
+                ${getPlanUsdEquivalent(plan)}
                 <p class="plan-desc">${escapeHTML(plan.description || "Sem descrição")}</p>
                 <ul class="plan-features">
                     <li><span class="material-icons">check_circle</span> Duração máx. de música: ${plan.max_song_duration}s</li>
