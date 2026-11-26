@@ -152,7 +152,7 @@ load_dotenv(
 FRONTEND_DIR = BASE_DIR.parent / "frontend"
 
 MUSIC_DIR = BASE_DIR / "music"
-COVERS_DIR = BASE_DIR / "covers"
+COVERS_DIR = Path(os.getenv("COVERS_DIR", str(BASE_DIR / "covers"))).expanduser()
 AVATARS_DIR = BASE_DIR / "avatars"
 
 
