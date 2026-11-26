@@ -46,7 +46,7 @@ class CompatCursor:
         m = re.match(r"\s*INSERT\s+INTO\s+([a-zA-Z_][\w]*)", sql, re.I)
         if m and not re.search(r"\bRETURNING\b", sql, re.I):
             table = m.group(1).lower()
-            if table not in {"community_likes", "user_follows", "payment_webhook_events", "paddle_webhook_events", "bitpay_webhook_events", "schema_migrations"}:
+            if table not in {"community_likes", "user_follows", "payment_webhook_events", "paddle_webhook_events", "bitpay_webhook_events", "schema_migrations", "password_reset_tokens"}:
                 sql = sql.rstrip().rstrip(';') + " RETURNING id"
         self._cursor.execute(sql, params or ())
         self.rowcount = self._cursor.rowcount
