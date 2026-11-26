@@ -4968,7 +4968,9 @@ def process_paddle_transaction(
     # Confirmar também o valor cobrado. O Price ID isolado não basta
     # se o checkout tiver sido alterado ou configurado incorrectamente.
     try:
-        expected_amount = Decimal(str(payment.get("price_usd") or "0"))
+        # O valor guardado no registo local foi definido pelo backend
+        # ao criar o checkout; não confiar no valor do webhook isoladamente.
+        expected_amount = Decimal(str(payment.get("amount") or "0"))
         received_amount = Decimal(str(amount))
     except Exception:
         raise ValueError("Não foi possível validar o valor da transação Paddle.")
