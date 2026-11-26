@@ -3737,8 +3737,8 @@ def verify_paddle_signature(
 
         timestamp_int = int(timestamp)
 
-        # Proteção contra pedidos antigos.
-        if abs(time.time() - timestamp_int) > 5:
+        # Tolerância de cinco minutos para pequenas diferenças de relógio.
+        if abs(time.time() - timestamp_int) > 300:
             return False
 
         signed_payload = (
@@ -4311,6 +4311,23 @@ def admin_review_payment(
                 "ou deixou de estar pendente."
             )
         )
+
+    # Pagamentos de fornecedores externos só podem ser confirmados
+    # pelo webhook autenticado do próprio fornecedor.
+    if payment.get("payment_provider") not in {"manual", "pending_integration", None, ""}:
+        raise HTTPException(
+            status_code=403,
+            detail="Este pagamento deve ser confirmado pelo fornecedor. A aprovação manual está bloqueada."
+        )
+
+    if data.status == "confirmed" and (
+        not payment.get("proof_file") or not payment.get("payment_proof_hash")
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Não existe comprovativo válido associado. Solicite o envio do comprovativo antes da análise."
+        )
+
     try:
         if data.status == "confirmed":
             # Só confirmar depois de verificar
@@ -4460,17 +4477,37 @@ async def upload_payment_proof(
 
         filepath = PAYMENT_PROOFS_DIR / filename
 
-        # Criar o ficheiro sem substituir outro existente.
+        # O hash identifica exactamente o ficheiro. Um mesmo recibo
+        # não pode ser reutilizado para pagar duas encomendas/contas.
+        proof_hash = hashlib.sha256(content).hexdigest()
 
+        with get_connection() as connection:
+            duplicate = connection.execute(
+                """
+                SELECT id FROM payments
+                WHERE payment_proof_hash = ?
+                  AND id <> ?
+                LIMIT 1
+                """,
+                (proof_hash, payment_id)
+            ).fetchone()
+
+        if duplicate:
+            raise HTTPException(
+                status_code=409,
+                detail="Este comprovativo já foi utilizado noutro pagamento. Não será aceite novamente."
+            )
+
+        # Criar o ficheiro sem substituir outro existente.
         with open(filepath, "xb") as destination:
             destination.write(content)
 
         try:
-
             updated = update_payment_proof(
                 payment_id=payment_id,
                 user_id=user["id"],
-                proof_file=filename
+                proof_file=filename,
+                proof_hash=proof_hash
             )
 
         except Exception:
@@ -4495,6 +4532,8 @@ async def upload_payment_proof(
             "message": "Comprovativo enviado com sucesso.",
             "payment_id": payment_id,
             "status": "pending",
+            "verification_status": "awaiting_manual_verification",
+            "verification_message": "Comprovativo recebido. O ficheiro será analisado; o envio não confirma que o dinheiro entrou na conta.",
             "proof_uploaded": True
         }
 
@@ -5289,30 +5328,31 @@ async def paddle_webhook(
     now = datetime.utcnow().isoformat()
 
     try:
-
         with get_connection() as connection:
-
-            # ------------------------------------------------
-            # IDEMPOTÊNCIA
-            # ------------------------------------------------
-
-            existing = connection.execute(
+            inserted = connection.execute(
                 """
-                SELECT processing_status
-                FROM paddle_webhook_events
-                WHERE event_id = ?
+                INSERT INTO paddle_webhook_events (
+                    event_id, event_type, occurred_at,
+                    processing_status, payload_json, received_at
+                )
+                VALUES (?, ?, ?, 'received', ?, ?)
+                ON CONFLICT (event_id) DO NOTHING
                 """,
-                (event_id,)
-            ).fetchone()
+                (event_id, event_type, occurred_at, raw_body.decode("utf-8"), now)
+            )
+            if inserted.rowcount == 0:
+                existing = connection.execute(
+                    "SELECT processing_status FROM paddle_webhook_events WHERE event_id = ?",
+                    (event_id,)
+                ).fetchone()
+                if existing and existing["processing_status"] == "processed":
+                    return {"success": True, "duplicate": True}
+                raise HTTPException(status_code=409, detail="Este evento já está a ser processado ou aguarda nova tentativa.")
 
-            if existing and existing["processing_status"] == "processed":
-
-                return {
-                    "success": True,
-                    "duplicate": True
-                }
-
-            connection.execute(
+            # ------------------------------------------------
+            # PROCESSAR EVENTO AUTENTICADO
+            # ------------------------------------------------
+            if event_type == "transaction.completed":
                 """
                 INSERT OR IGNORE INTO paddle_webhook_events (
                     event_id,
