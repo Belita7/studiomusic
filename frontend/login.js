@@ -500,24 +500,3 @@ if (googleLoginButton) {
         );
     });
 }
-
-
-// ============================================================
-// RECUPERAÇÃO DE PASSWORD
-// ============================================================
-
-const forgotLink =
-    document.querySelector(".forgot-link");
-
-if (forgotLink) {
-
-    forgotLink.addEventListener("click", event => {
-
-        event.preventDefault();
-
-        showMessage(
-            "A recuperação de palavra-passe ainda precisa de ser integrada no backend.",
-            "info"
-        );
-    });
-}
