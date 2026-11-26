@@ -1591,10 +1591,13 @@ def register(
         password
     )
 
+    # A recompensa é concedida dentro da mesma transacção do registo,
+    # apenas para contas comuns; o administrador não recebe crédito promocional.
     user_id = create_user(
         name=name,
         email=email,
-        password_hash=password_hash
+        password_hash=password_hash,
+        grant_signup_reward=True
     )
 
     user = get_user_by_id(
@@ -1610,7 +1613,12 @@ def register(
         "success": True,
 
         "message":
-            "Conta criada com sucesso.",
+            "Conta criada com sucesso! Recebeste 1 música de teste gratuita.",
+        "signup_reward": {
+            "granted": True,
+            "credits": 1,
+            "description": "1 geração de música gratuita na promoção de lançamento"
+        },
 
         "access_token":
             token,
