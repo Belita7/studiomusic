@@ -985,12 +985,15 @@ function renderPayments() {
                 <td class="align-right">
                     <div class="table-actions">
                         ${
-                            payment.status === "pending"
+                            payment.status === "pending" &&
+                            ["manual", "pending_integration"].includes(payment.payment_provider) &&
+                            payment.proof_file &&
+                            payment.payment_proof_hash
                                 ? action(
                                     "confirm-payment",
                                     payment.id,
                                     "check_circle",
-                                    "Confirmar pagamento"
+                                    "Confirmar após verificar recebimento"
                                 ) +
                                 action(
                                     "reject-payment",
@@ -998,7 +1001,9 @@ function renderPayments() {
                                     "cancel",
                                     "Rejeitar pagamento"
                                 )
-                                : "—"
+                                : payment.status === "pending"
+                                    ? "A aguardar comprovativo ou confirmação do fornecedor"
+                                    : "—"
                         }
                     </div>
                 </td>
