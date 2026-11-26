@@ -165,6 +165,19 @@ def init_database():
                 raise RuntimeError("Schema PostgreSQL não encontrado: studiomusic.sql")
             # Execute the reviewed DDL as one PostgreSQL script.
             cur.execute(schema_path.read_text(encoding="utf-8"))
+        # Recompensa promocional: uma música de teste por utilizador,
+        # protegida por chave única para impedir múltiplas concessões.
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS signup_reward_grants (
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                reward_code TEXT NOT NULL,
+                credit_lot_id BIGINT,
+                granted_at TEXT NOT NULL,
+                UNIQUE (user_id, reward_code)
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_signup_rewards_user ON signup_reward_grants(user_id)")
         # Compatibility with fields referenced by the existing Paddle/BitPay code.
         cur.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS price_usd NUMERIC(12,2) NOT NULL DEFAULT 0")
         # Integridade de pagamentos: hash do comprovativo e referência normalizada.
@@ -623,7 +636,8 @@ def create_user(
     name: str,
     email: str,
     password_hash: str,
-    is_admin: bool = False
+    is_admin: bool = False,
+    grant_signup_reward: bool = False
 ):
 
     created_at = datetime.utcnow().isoformat()
@@ -650,9 +664,50 @@ def create_user(
             created_at
         ))
 
+        user_id = cursor.lastrowid
+
+        if grant_signup_reward:
+            _grant_signup_song_credit(connection, int(user_id))
+
         connection.commit()
 
-        return cursor.lastrowid
+        return user_id
+
+
+def _grant_signup_song_credit(connection, user_id: int):
+    """Grant exactly one promotional generation, atomically with registration."""
+    now = datetime.utcnow().isoformat()
+    reward_code = "launch_signup_song_v1"
+
+    inserted = connection.execute("""
+        INSERT INTO signup_reward_grants (user_id, reward_code, granted_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT (user_id, reward_code) DO NOTHING
+    """, (user_id, reward_code, now))
+
+    if inserted.rowcount == 0:
+        return False
+
+    free_plan = connection.execute(
+        "SELECT id FROM plans WHERE code = 'free' LIMIT 1"
+    ).fetchone()
+    if free_plan is None:
+        raise RuntimeError("Plano gratuito não encontrado para atribuir a música promocional.")
+
+    lot = connection.execute("""
+        INSERT INTO credit_lots (
+            user_id, plan_id, payment_id, subscription_id,
+            credits_total, credits_remaining, starts_at, expires_at, created_at
+        ) VALUES (?, ?, NULL, NULL, 1, 1, ?, NULL, ?)
+    """, (user_id, free_plan["id"], now, now))
+
+    connection.execute("""
+        UPDATE signup_reward_grants
+        SET credit_lot_id = ?
+        WHERE user_id = ? AND reward_code = ?
+    """, (lot.lastrowid, user_id, reward_code))
+
+    return True
 
 
 def get_user_by_id(user_id: int):
