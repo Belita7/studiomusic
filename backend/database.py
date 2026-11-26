@@ -184,7 +184,6 @@ def init_database():
                   WHERE transaction_reference IS NOT NULL AND BTRIM(transaction_reference) <> ''
                   GROUP BY payment_provider,
                     UPPER(REGEXP_REPLACE(BTRIM(transaction_reference), '[^A-Za-z0-9]', '', 'g'))
-                  HAVING COUNT(*) = 1
               )
         """)
         cur.execute("""
