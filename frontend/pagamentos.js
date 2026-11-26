@@ -1015,7 +1015,7 @@ function renderPaymentHistory(payments) {
 
             <td>
                 <span class="payment-status ${escapeHTML(status)}">
-                    ${escapeHTML(translatePaymentStatus(status))}
+                    ${escapeHTML(status === "pending" && payment.proof_file ? "A aguardar verificação" : translatePaymentStatus(status))}
                 </span>
             </td>
         `;
