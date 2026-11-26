@@ -374,7 +374,7 @@ except Exception:
 # Mureka is the only active music-generation provider.
 MUREKA_API_KEY = os.getenv("MUREKA_API_KEY", "").strip()
 MUREKA_BASE_URL = os.getenv("MUREKA_BASE_URL", "https://api.mureka.ai").strip().rstrip("/")
-MUREKA_MODEL = os.getenv("MUREKA_MODEL", "mureka-9.5").strip()
+MUREKA_MODEL = os.getenv("MUREKA_MODEL", "mureka-7.6").strip()
 # Test mode: strictly limited to an allowlisted account configured in Render.
 MUREKA_TEST_MODE = os.getenv("MUREKA_TEST_MODE", "false").strip().lower() in {"1", "true", "yes", "on"}
 MUREKA_TEST_EMAILS = {email.strip().lower() for email in os.getenv("MUREKA_TEST_EMAILS", "").split(",") if email.strip()}
@@ -569,7 +569,7 @@ class GenerateMusicRequest(BaseModel):
     duration: Optional[int] = Field(default=180, ge=1, le=600)
     instrumental: bool = False
     vocal_gender: Optional[str] = None
-    model: str = "mureka-9.5"
+    model: str = "mureka-7.6"
     audio_weight: Optional[float] = Field(default=None, ge=0, le=1)
     style_weight: Optional[float] = Field(default=None, ge=0, le=1)
     weirdness: Optional[float] = Field(default=None, ge=0, le=1)
@@ -2169,7 +2169,7 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
     model = (data.model or MUREKA_MODEL).strip()
     allowed_models = {"mureka-7.6", "mureka-8", "mureka-9", "mureka-9.5", "mureka-o2"}
     if model not in allowed_models:
-        model = MUREKA_MODEL if MUREKA_MODEL in allowed_models else "mureka-9.5"
+        model = MUREKA_MODEL if MUREKA_MODEL in allowed_models else "mureka-7.6"
     if model == "mureka-o2" and vocal_id:
         raise HTTPException(status_code=400, detail="O modelo mureka-o2 não aceita um perfil vocal vocal_id.")
     gender = {"m": "male", "f": "female"}.get(data.vocal_gender, data.vocal_gender)
