@@ -111,7 +111,12 @@ function statusLabel(status) {
         failed: "Falhou",
         confirmed: "Confirmado",
         rejected: "Rejeitado",
-        cancelled: "Cancelado"
+        cancelled: "Cancelado",
+        open: "Aberto",
+        in_progress: "Em análise",
+        waiting_user: "A aguardar utilizador",
+        resolved: "Resolvido",
+        closed: "Fechado"
     };
 
     return labels[status] || status || "—";
