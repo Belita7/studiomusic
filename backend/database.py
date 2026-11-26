@@ -201,8 +201,10 @@ def init_database():
             ticket_id BIGINT NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
             sender_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             message TEXT NOT NULL,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            is_read BOOLEAN NOT NULL DEFAULT FALSE
         )""")
+        cur.execute("ALTER TABLE support_messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN NOT NULL DEFAULT FALSE")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_support_tickets_user_updated ON support_tickets(user_id, updated_at DESC)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_support_tickets_status_priority ON support_tickets(status, priority)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_support_messages_ticket_created ON support_messages(ticket_id, created_at, id)")
