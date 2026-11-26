@@ -2366,7 +2366,7 @@ def update_payment_proof(
               AND user_id = ?
               AND status = 'pending'
               AND payment_method IN ('bank_transfer', 'unifi_transfer', 'multicaixa_express', 'usdc')
-              AND proof_file IS NULL
+              AND (proof_file IS NULL OR payment_proof_hash IS NULL)
         """, (
             proof_file,
             proof_hash,
