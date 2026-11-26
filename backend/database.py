@@ -1726,13 +1726,22 @@ def initialize_default_plans():
             "monthly_song_limit": 3,
         },
         {
+            "code": "starter",
+            "name": "Starter",
+            "description": "Plano ideal para começar a criar música.",
+            "price": 5000,
+            "duration_days": 30,
+            "max_song_duration": 180,
+            "monthly_song_limit": 4,
+        },
+        {
             "code": "basic",
             "name": "Básico",
-            "description": "Plano pago para utilização regular.",
+            "description": "Plano para utilização regular.",
             "price": 8000,
             "duration_days": 30,
             "max_song_duration": 180,
-            "monthly_song_limit": 60,
+            "monthly_song_limit": 8,
         },
         {
             "code": "premium",
@@ -1741,7 +1750,7 @@ def initialize_default_plans():
             "price": 15000,
             "duration_days": 30,
             "max_song_duration": 300,
-            "monthly_song_limit": 100,
+            "monthly_song_limit": 16,
         },
     ]
 
@@ -1890,26 +1899,45 @@ def migrate_international_billing():
         # PREÇOS DEFINIDOS PARA OS PLANOS
         # --------------------------------------------
 
+        # Estrutura comercial aprovada: Starter, Básico e Premium.
+        # Actualiza apenas a definição dos planos; assinaturas e créditos já
+        # atribuídos continuam intactos.
         cursor.execute("""
             UPDATE plans
-            SET
+            SET name = 'Starter',
+                description = 'Plano ideal para começar a criar música.',
                 price = 5000,
+                price_usd = 0,
+                currency = 'AOA',
+                monthly_song_limit = 4,
+                duration_days = 30,
+                max_song_duration = 180,
+                updated_at = ?
+            WHERE code = 'starter'
+        """, (now,))
+        cursor.execute("""
+            UPDATE plans
+            SET name = 'Básico',
+                description = 'Plano para utilização regular.',
+                price = 8000,
                 price_usd = 5.99,
                 currency = 'AOA',
-                monthly_song_limit = 20,
+                monthly_song_limit = 8,
                 duration_days = 30,
+                max_song_duration = 180,
                 updated_at = ?
             WHERE code = 'basic'
         """, (now,))
-
         cursor.execute("""
             UPDATE plans
-            SET
-                price = 10000,
+            SET name = 'Premium',
+                description = 'Plano completo para criação intensiva.',
+                price = 15000,
                 price_usd = 11.99,
                 currency = 'AOA',
-                monthly_song_limit = 40,
+                monthly_song_limit = 16,
                 duration_days = 30,
+                max_song_duration = 300,
                 updated_at = ?
             WHERE code = 'premium'
         """, (now,))
