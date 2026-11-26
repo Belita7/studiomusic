@@ -116,6 +116,11 @@
 
             </button>
 
+            <button type="button" class="nav-item" data-view="support">
+                <span class="material-icons-round">support_agent</span>
+                <span>Suporte</span>
+            </button>
+
             <button
                 type="button"
                 class="nav-item"
@@ -957,6 +962,27 @@
             </section>
 
 
+
+            <!-- SUPORTE: TICKETS E CONVERSAS -->
+            <section class="view" id="view-support">
+                <div class="section-intro"><div><h2>Suporte</h2><p>Gere pedidos, responde aos utilizadores e acompanha o estado de cada conversa.</p></div></div>
+                <div class="support-admin-layout">
+                    <section class="panel support-admin-list"><div class="panel-heading"><h3>Pedidos recebidos</h3><button class="btn btn-secondary" id="supportRefresh">Actualizar</button></div><div id="adminSupportTickets">A carregar pedidos...</div></section>
+                    <section class="panel support-admin-chat">
+                        <div id="adminSupportEmpty" class="support-admin-empty">Selecciona um ticket para consultar a conversa.</div>
+                        <div id="adminSupportDetail" class="hidden">
+                            <div class="panel-heading"><div><small id="adminSupportNumber"></small><h3 id="adminSupportSubject"></h3><p id="adminSupportOwner"></p></div></div>
+                            <div class="support-admin-controls">
+                                <label>Estado <select id="adminSupportStatus"><option value="open">Aberto</option><option value="in_progress">Em análise</option><option value="waiting_user">A aguardar utilizador</option><option value="resolved">Resolvido</option><option value="closed">Fechado</option></select></label>
+                                <label>Prioridade <select id="adminSupportPriority"><option value="low">Baixa</option><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option></select></label>
+                                <button id="adminSupportSave" class="btn btn-primary">Guardar estado</button>
+                            </div>
+                            <div id="adminSupportMessages" class="support-admin-messages"></div>
+                            <form id="adminSupportReply" class="support-admin-reply"><textarea id="adminSupportMessage" rows="3" maxlength="4000" placeholder="Responder ao utilizador..." required></textarea><button class="btn btn-primary" type="submit">Enviar resposta</button></form>
+                        </div>
+                    </section>
+                </div>
+            </section>
 
             <!-- =============================================
                  6. ESTATÍSTICAS
