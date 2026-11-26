@@ -234,7 +234,8 @@ def generate_music_cover(title: str, music_prompt: str):
     image_path = COVERS_DIR / filename
     image.save(image_path, format="PNG")
 
-    return f"/covers/{filename}"
+    public_base = os.getenv("BACKEND_PUBLIC_URL", "https://studiomusic.onrender.com").rstrip("/")
+    return f"{public_base}/covers/{filename}"
 
 
 
