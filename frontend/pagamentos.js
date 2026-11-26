@@ -344,6 +344,10 @@ function renderPlans() {
         const currency = plan.currency ?? "AOA";
 
         const features = getPlanFeatures(plan);
+        const songLimit = Number(plan.monthly_song_limit || 0);
+        if (songLimit > 0 && !features.some(item => /m[uú]sica/i.test(String(item)))) {
+            features.unshift(`Inclui ${songLimit} músicas por período de 30 dias`);
+        }
 
         const card = document.createElement("article");
 
