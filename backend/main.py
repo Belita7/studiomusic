@@ -339,12 +339,18 @@ PADDLE_BASIC_PRICE_ID = os.getenv(
     ""
 ).strip()
 
+PADDLE_STARTER_PRICE_ID = os.getenv(
+    "PADDLE_STARTER_PRICE_ID",
+    ""
+).strip()
+
 PADDLE_PREMIUM_PRICE_ID = os.getenv(
     "PADDLE_PREMIUM_PRICE_ID",
     ""
 ).strip()
 
 PADDLE_PRICE_IDS = {
+    "starter": PADDLE_STARTER_PRICE_ID,
     "basic": PADDLE_BASIC_PRICE_ID,
     "premium": PADDLE_PREMIUM_PRICE_ID
 }
@@ -3288,7 +3294,7 @@ def create_paddle_checkout(
 
     plan_code = plan.get("code")
 
-    if plan_code not in {"basic", "premium"}:
+    if plan_code not in {"starter", "basic", "premium"}:
         raise HTTPException(
             status_code=400,
             detail="Este plano não aceita checkout internacional."
@@ -3302,10 +3308,12 @@ def create_paddle_checkout(
             detail="Preço Paddle não configurado para este plano."
         )
 
-    amount_usd = {
-        "basic": 5.99,
-        "premium": 11.99
-    }[plan_code]
+    amount_usd = float(plan.get("price_usd") or 0)
+    if amount_usd <= 0:
+        raise HTTPException(
+            status_code=503,
+            detail="O preço internacional deste plano ainda não está configurado na base de dados."
+        )
 
     now = datetime.utcnow().isoformat()
 
