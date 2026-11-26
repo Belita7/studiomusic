@@ -13,6 +13,7 @@ const state = {
     users: [],
     songs: [],
     payments: [],
+    plans: [],
     me: null,
     supportTickets: [],
     selectedSupport: null,
@@ -1229,6 +1230,22 @@ function renderAll() {
    CARREGAR DADOS DO BACKEND
    ========================================================= */
 
+function renderAdminPlans() {
+    const container = $("adminPlansSummary");
+    if (!container) return;
+    const plans = state.plans.filter(plan => plan.code !== "free" && Number(plan.price || 0) > 0);
+    if (!plans.length) {
+        container.textContent = "Não existem planos pagos activos.";
+        return;
+    }
+    container.innerHTML = plans.map(plan => `
+        <article class="admin-plan-item">
+            <div><strong>${esc(plan.name)}</strong><span>${Number(plan.monthly_song_limit || 0)} músicas / 30 dias</span></div>
+            <strong>${esc(money(plan.price))}</strong>
+        </article>
+    `).join("");
+}
+
 async function loadAll(silent = false) {
     if (state.busy) return;
 
@@ -1240,13 +1257,15 @@ async function loadAll(silent = false) {
         const results = await Promise.allSettled([
             request("/api/admin/users"),
             request("/api/admin/music"),
-            request("/api/admin/payments")
+            request("/api/admin/payments"),
+            request("/api/plans")
         ]);
 
         const definitions = [
             ["utilizadores", "users"],
             ["músicas", "songs"],
-            ["pagamentos", "payments"]
+            ["pagamentos", "payments"],
+            ["planos", "plans"]
         ];
 
         let errors = 0;
@@ -1271,7 +1290,12 @@ async function loadAll(silent = false) {
             }
 
             try {
-                state[key] = normaliseList(result.value, key);
+                if (key === "plans") {
+                    state.plans = Array.isArray(result.value?.plans) ? result.value.plans : [];
+                    renderAdminPlans();
+                } else {
+                    state[key] = normaliseList(result.value, key);
+                }
             } catch (error) {
                 errors++;
 
