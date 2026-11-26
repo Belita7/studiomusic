@@ -1007,18 +1007,20 @@ def support_list_tickets(user=Depends(get_current_user)):
         if bool(user.get("is_admin", 0)):
             rows = connection.execute(
                 """SELECT t.*, u.name AS user_name, u.email AS user_email,
-                          (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id=t.id) AS message_count
+                          (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id=t.id) AS message_count,
+                          (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id=t.id AND m.sender_id<>? AND m.is_read=FALSE) AS unread_count
                    FROM support_tickets t JOIN users u ON u.id=t.user_id
                    ORDER BY CASE WHEN t.status IN ('open','in_progress','waiting_user') THEN 0 ELSE 1 END,
                             CASE t.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,
-                            t.updated_at DESC"""
+                            t.updated_at DESC""",
+                (user["id"],)
             ).fetchall()
         else:
             rows = connection.execute(
                 """SELECT t.*,
                           (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id=t.id) AS message_count
                    FROM support_tickets t WHERE t.user_id=? ORDER BY t.updated_at DESC""",
-                (user["id"],)
+                (user["id"], user["id"])
             ).fetchall()
     return {"success": True, "tickets": [dict(row) for row in rows]}
 
@@ -1035,6 +1037,10 @@ def support_get_ticket(ticket_id: int, user=Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="Ticket não encontrado.")
         if not bool(user.get("is_admin", 0)) and int(ticket["user_id"]) != int(user["id"]):
             raise HTTPException(status_code=404, detail="Ticket não encontrado.")
+        connection.execute(
+            "UPDATE support_messages SET is_read=TRUE WHERE ticket_id=? AND sender_id<>?",
+            (ticket_id, user["id"])
+        )
         messages = connection.execute(
             """SELECT m.id, m.ticket_id, m.sender_id, m.message, m.created_at,
                       u.name AS sender_name, u.is_admin AS sender_is_admin
