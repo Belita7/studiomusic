@@ -14,6 +14,8 @@ const state = {
     songs: [],
     payments: [],
     me: null,
+    supportTickets: [],
+    selectedSupport: null,
     current: "overview",
     busy: false
 };
@@ -326,7 +328,8 @@ function showView(view) {
         music: "Painel de músicas",
         payments: "Pagamentos",
         community: "Comunidade",
-        statistics: "Estatísticas"
+        statistics: "Estatísticas",
+        support: "Suporte"
     };
 
     set("pageTitle", titles[view] || "Administração");
@@ -1518,6 +1521,87 @@ async function handleAction(name, id) {
 
 
 /* =========================================================
+   SUPORTE — GESTÃO DE TICKETS
+   ========================================================= */
+async function loadSupportTickets() {
+    const data = await request("/api/support/tickets");
+    state.supportTickets = Array.isArray(data.tickets) ? data.tickets : [];
+    const host = $("adminSupportTickets");
+    if (!host) return;
+    if (!state.supportTickets.length) {
+        host.innerHTML = '<p class="support-admin-empty">Ainda não existem pedidos de suporte.</p>';
+        return;
+    }
+    host.innerHTML = state.supportTickets.map(t => `
+        <button type="button" class="support-admin-ticket ${Number(t.id) === Number(state.selectedSupport) ? "active" : ""}" data-support-ticket="${Number(t.id)}">
+            <strong>${esc(t.ticket_number)} · ${esc(t.subject)}</strong>
+            <small>${esc(t.user_name || t.user_email || "Utilizador")} · ${esc(statusLabel(t.status))} · ${esc(t.priority || "normal")}</small>
+            <small>${esc(fmtDate(t.updated_at))}</small>
+        </button>
+    `).join("");
+}
+async function openAdminSupportTicket(id) {
+    state.selectedSupport = Number(id);
+    await loadSupportTickets();
+    const data = await request(`/api/support/tickets/${state.selectedSupport}`);
+    const t = data.ticket;
+    $("adminSupportEmpty")?.classList.add("hidden");
+    $("adminSupportDetail")?.classList.remove("hidden");
+    set("adminSupportNumber", t.ticket_number);
+    set("adminSupportSubject", t.subject);
+    set("adminSupportOwner", `${t.user_name || "Utilizador"} · ${t.user_email || ""}`);
+    if ($("adminSupportStatus")) $("adminSupportStatus").value = t.status;
+    if ($("adminSupportPriority")) $("adminSupportPriority").value = t.priority || "normal";
+    const messages = $("adminSupportMessages");
+    if (messages) {
+        messages.innerHTML = (data.messages || []).map(m => `
+            <article class="support-admin-message ${yes(m.sender_is_admin) ? "staff" : ""}">
+                <small>${esc(m.sender_name || "Utilizador")}${yes(m.sender_is_admin) ? " · Equipa de suporte" : ""} · ${esc(fmtDate(m.created_at))}</small>
+                <p>${esc(m.message)}</p>
+            </article>
+        `).join("");
+        messages.scrollTop = messages.scrollHeight;
+    }
+    const closed = t.status === "closed";
+    if ($("adminSupportMessage")) $("adminSupportMessage").disabled = closed;
+    $("adminSupportReply")?.querySelector("button")?.toggleAttribute("disabled", closed);
+}
+async function saveAdminSupportStatus() {
+    if (!state.selectedSupport) return;
+    try {
+        await request(`/api/admin/support/tickets/${state.selectedSupport}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                status: $("adminSupportStatus").value,
+                priority: $("adminSupportPriority").value
+            })
+        });
+        toast("Estado do ticket actualizado.");
+        await openAdminSupportTicket(state.selectedSupport);
+    } catch (error) { toast(error.message, true); }
+}
+async function sendAdminSupportReply(event) {
+    event.preventDefault();
+    if (!state.selectedSupport) return;
+    const field = $("adminSupportMessage");
+    const message = field.value.trim();
+    if (!message) return;
+    const button = event.currentTarget.querySelector("button");
+    button.disabled = true;
+    try {
+        await request(`/api/support/tickets/${state.selectedSupport}/messages`, {
+            method: "POST",
+            body: JSON.stringify({ message })
+        });
+        field.value = "";
+        await openAdminSupportTicket(state.selectedSupport);
+        toast("Resposta enviada.");
+    } catch (error) { toast(error.message, true); }
+    finally { button.disabled = false; }
+}
+
+
+/* =========================================================
    INICIALIZAÇÃO
    ========================================================= */
 
@@ -1549,6 +1633,25 @@ async function init() {
             );
         }
     });
+
+    $("adminSupportTickets")?.addEventListener("click", event => {
+        const item = event.target.closest("[data-support-ticket]");
+        if (item) openAdminSupportTicket(item.dataset.supportTicket).catch(error => toast(error.message, true));
+    });
+    $("supportRefresh")?.addEventListener("click", () => loadSupportTickets().catch(error => toast(error.message, true)));
+    $("adminSupportSave")?.addEventListener("click", saveAdminSupportStatus);
+    $("adminSupportReply")?.addEventListener("submit", sendAdminSupportReply);
+    document.addEventListener("click", event => {
+        const nav = event.target.closest("[data-view]");
+        if (nav?.dataset.view === "support") loadSupportTickets().catch(error => toast(error.message, true));
+    });
+    setInterval(() => {
+        if (state.current === "support" && token()) {
+            loadSupportTickets().then(() => {
+                if (state.selectedSupport) openAdminSupportTicket(state.selectedSupport);
+            }).catch(() => {});
+        }
+    }, 15000);
 
     // Filtros dos utilizadores.
     ["userSearch", "userStatusFilter", "userRoleFilter"]
