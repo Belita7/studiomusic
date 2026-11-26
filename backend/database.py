@@ -197,6 +197,24 @@ def init_database():
             WHERE transaction_reference_normalized IS NOT NULL
               AND payment_provider IS NOT NULL
         """)
+        # Se dados antigos tiverem transaction IDs repetidos, preservar
+        # o registo mais antigo e limpar apenas as cópias inválidas antes
+        # de activar a restrição única.
+        cur.execute("""
+            WITH duplicates AS (
+                SELECT id,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY payment_provider, provider_transaction_id
+                           ORDER BY id
+                       ) AS position
+                FROM payments
+                WHERE provider_transaction_id IS NOT NULL
+                  AND payment_provider IS NOT NULL
+            )
+            UPDATE payments
+            SET provider_transaction_id = NULL
+            WHERE id IN (SELECT id FROM duplicates WHERE position > 1)
+        """)
         cur.execute("""
             CREATE UNIQUE INDEX IF NOT EXISTS uq_payments_provider_transaction
             ON payments(payment_provider, provider_transaction_id)
