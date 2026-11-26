@@ -4328,6 +4328,12 @@ def admin_review_payment(
             detail="Não existe comprovativo válido associado. Solicite o envio do comprovativo antes da análise."
         )
 
+    if data.status == "confirmed" and len((data.admin_note or "").strip()) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="Regista uma nota de auditoria a confirmar que verificaste a entrada do valor no extracto/conta de recebimento."
+        )
+
     try:
         if data.status == "confirmed":
             # Só confirmar depois de verificar
