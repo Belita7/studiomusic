@@ -1541,6 +1541,7 @@ async function loadSupportTickets() {
         <button type="button" class="support-admin-ticket ${Number(t.id) === Number(state.selectedSupport) ? "active" : ""}" data-support-ticket="${Number(t.id)}">
             <strong>${esc(t.ticket_number)} · ${esc(t.subject)}</strong>
             <small>${esc(t.user_name || t.user_email || "Utilizador")} · ${esc(statusLabel(t.status))} · ${esc(t.priority || "normal")}</small>
+            ${Number(t.unread_count || 0) > 0 ? `<small>${Number(t.unread_count)} mensagem(ns) por ler</small>` : ""}
             <small>${esc(fmtDate(t.updated_at))}</small>
         </button>
     `).join("");
