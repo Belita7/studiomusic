@@ -4953,6 +4953,17 @@ def process_paddle_transaction(
             "O Price ID recebido não corresponde ao plano."
         )
 
+    # Confirmar também o valor cobrado. O Price ID isolado não basta
+    # se o checkout tiver sido alterado ou configurado incorrectamente.
+    try:
+        expected_amount = Decimal(str(payment.get("price_usd") or "0"))
+        received_amount = Decimal(str(amount))
+    except Exception:
+        raise ValueError("Não foi possível validar o valor da transação Paddle.")
+
+    if expected_amount <= 0 or received_amount != expected_amount:
+        raise ValueError("O valor recebido do Paddle não corresponde ao preço USD do plano.")
+
     now = datetime.utcnow().isoformat()
 
     # --------------------------------------------------------
