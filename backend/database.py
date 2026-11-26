@@ -183,6 +183,29 @@ def init_database():
         cur.execute("""CREATE TABLE IF NOT EXISTS bitpay_webhook_events (
             event_id TEXT PRIMARY KEY, event_type TEXT, status TEXT NOT NULL DEFAULT 'processing',
             received_at TEXT NOT NULL, processed_at TEXT)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS support_tickets (
+            id BIGSERIAL PRIMARY KEY,
+            ticket_number TEXT NOT NULL UNIQUE,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            subject TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'other',
+            description TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'open',
+            priority TEXT NOT NULL DEFAULT 'normal',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            closed_at TEXT
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS support_messages (
+            id BIGSERIAL PRIMARY KEY,
+            ticket_id BIGINT NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+            sender_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            message TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )""")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_support_tickets_user_updated ON support_tickets(user_id, updated_at DESC)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_support_tickets_status_priority ON support_tickets(status, priority)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_support_messages_ticket_created ON support_messages(ticket_id, created_at, id)")
 
 def backfill_active_subscription_credits(connection, user_id: int, now: str):
     """Atribui uma única vez créditos a assinaturas activas antigas.
