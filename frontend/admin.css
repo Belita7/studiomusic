@@ -1803,3 +1803,23 @@ textarea:focus-visible {
 /* ============================================================
    FIM DO ADMIN.CSS
    ============================================================ */
+
+/* SUPORTE — tickets e conversas */
+.support-admin-layout{display:grid;grid-template-columns:minmax(280px,.8fr) minmax(0,1.5fr);gap:18px;align-items:start}
+.support-admin-list,.support-admin-chat{padding:18px;min-width:0}
+.support-admin-ticket{display:block;width:100%;text-align:left;background:var(--card-bg,#171725);border:1px solid var(--border,rgba(255,255,255,.1));border-radius:10px;padding:12px;margin:8px 0;color:inherit;cursor:pointer}
+.support-admin-ticket.active{border-color:var(--accent,#ff6b00);background:rgba(255,107,0,.08)}
+.support-admin-ticket strong,.support-admin-ticket small{display:block}
+.support-admin-ticket small{color:var(--text-secondary,#a7adb8);margin-top:5px}
+.support-admin-controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--border,rgba(255,255,255,.1))}
+.support-admin-controls label{display:grid;gap:6px;font-size:12px}
+.support-admin-controls select,.support-admin-reply textarea{background:var(--input,#10101b);color:var(--text-primary,#fff);border:1px solid var(--border,rgba(255,255,255,.1));border-radius:8px;padding:10px}
+.support-admin-messages{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto;padding:16px 0}
+.support-admin-message{background:var(--bg-secondary,#10101b);padding:12px;border-radius:10px;max-width:90%;overflow-wrap:anywhere}
+.support-admin-message.staff{align-self:flex-end;border:1px solid rgba(255,107,0,.3)}
+.support-admin-message small{display:block;color:var(--text-secondary,#a7adb8);margin-bottom:6px}
+.support-admin-message p{white-space:pre-wrap;margin:0;line-height:1.45}
+.support-admin-reply{display:grid;gap:10px}
+.support-admin-reply textarea{width:100%;resize:vertical}
+.support-admin-empty{padding:60px 15px;text-align:center;color:var(--text-secondary,#a7adb8)}
+@media(max-width:900px){.support-admin-layout{grid-template-columns:1fr}}
