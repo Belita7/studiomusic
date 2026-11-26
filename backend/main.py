@@ -1018,7 +1018,8 @@ def support_list_tickets(user=Depends(get_current_user)):
         else:
             rows = connection.execute(
                 """SELECT t.*,
-                          (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id=t.id) AS message_count
+                          (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id=t.id) AS message_count,
+                          (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id=t.id AND m.sender_id<>? AND m.is_read=FALSE) AS unread_count
                    FROM support_tickets t WHERE t.user_id=? ORDER BY t.updated_at DESC""",
                 (user["id"], user["id"])
             ).fetchall()
