@@ -5352,27 +5352,6 @@ async def paddle_webhook(
             # ------------------------------------------------
             # PROCESSAR EVENTO AUTENTICADO
             # ------------------------------------------------
-            if event_type == "transaction.completed":
-                """
-                INSERT OR IGNORE INTO paddle_webhook_events (
-                    event_id,
-                    event_type,
-                    occurred_at,
-                    processing_status,
-                    payload_json,
-                    received_at
-                )
-                VALUES (?, ?, ?, 'received', ?, ?)
-                """,
-                (
-                    event_id,
-                    event_type,
-                    occurred_at,
-                    raw_body.decode("utf-8"),
-                    now
-                )
-            )
-
             # ------------------------------------------------
             # EVENTOS DE TRANSAÇÃO
             # ------------------------------------------------
