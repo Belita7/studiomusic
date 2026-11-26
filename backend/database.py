@@ -178,6 +178,9 @@ def init_database():
             )
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS idx_signup_rewards_user ON signup_reward_grants(user_id)")
+        # Os créditos promocionais não pertencem a uma subscrição paga.
+        # Permitir lotes com subscription_id NULL sem alterar os lotes antigos.
+        cur.execute("ALTER TABLE credit_lots ALTER COLUMN subscription_id DROP NOT NULL")
         # Compatibility with fields referenced by the existing Paddle/BitPay code.
         cur.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS price_usd NUMERIC(12,2) NOT NULL DEFAULT 0")
         # Integridade de pagamentos: hash do comprovativo e referência normalizada.
