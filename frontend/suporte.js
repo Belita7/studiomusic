@@ -8,7 +8,24 @@ function date(v){if(!v)return "";const d=new Date(/Z$|[+-]\d\d:\d\d$/.test(Strin
 function statusLabel(s){return({open:"Aberto",in_progress:"Em análise",waiting_user:"A aguardar resposta",resolved:"Resolvido",closed:"Fechado"})[s]||s;}
 async function api(path,options={}){const r=await fetch(SUPPORT_API+path,{...options,headers:{Authorization:"Bearer "+token(),...(options.body?{"Content-Type":"application/json"}:{}),...(options.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||"Não foi possível concluir o pedido.");return d;}
 function toast(msg){$("supportToast").textContent=msg;$("supportToast").classList.add("show");setTimeout(()=>$("supportToast").classList.remove("show"),3200);}
-function renderTickets(){const host=$("ticketList");if(!tickets.length){host.innerHTML='<p class="support-muted">Ainda não criaste pedidos de suporte.</p>';return;}host.innerHTML=tickets.map(t=>'<button class="ticket-item '+(Number(t.id)===Number(selectedTicket)?'active':'')+'" data-ticket="'+Number(t.id)+'"><div class="ticket-item-top"><span>'+esc(t.ticket_number)+'</span><span class="ticket-status">'+esc(statusLabel(t.status))+'</span></div><strong>'+esc(t.subject)+'</strong>'+(Number(t.unread_count||0)>0?'<small class="ticket-unread">'+Number(t.unread_count)+' nova(s) mensagem(ns)</small>':'')+<small>'+date(t.updated_at)+'</small></button>').join("");}
+function renderTickets(){
+    const host=$("ticketList");
+    if(!tickets.length){
+        host.innerHTML='<p class="support-muted">Ainda não criaste pedidos de suporte.</p>';
+        return;
+    }
+    host.innerHTML=tickets.map(t=>`
+        <button class="ticket-item ${Number(t.id)===Number(selectedTicket)?"active":""}" data-ticket="${Number(t.id)}">
+            <div class="ticket-item-top">
+                <span>${esc(t.ticket_number)}</span>
+                <span class="ticket-status">${esc(statusLabel(t.status))}</span>
+            </div>
+            <strong>${esc(t.subject)}</strong>
+            ${Number(t.unread_count||0)>0?`<small class="ticket-unread">${Number(t.unread_count)} nova(s) mensagem(ns)</small>`:""}
+            <small>${date(t.updated_at)}</small>
+        </button>
+    `).join("");
+}
 async function loadTickets(){const d=await api("/api/support/tickets");tickets=d.tickets||[];renderTickets();if(selectedTicket&&!tickets.some(t=>Number(t.id)===Number(selectedTicket))){selectedTicket=null;showEmpty();}}
 function showEmpty(){$("emptyConversation").classList.remove("hidden");$("ticketConversation").classList.add("hidden");}
 async function openTicket(id){selectedTicket=Number(id);renderTickets();$("emptyConversation").classList.add("hidden");$("ticketConversation").classList.remove("hidden");await loadConversation();}
