@@ -236,6 +236,54 @@ def generate_music_cover(title: str, music_prompt: str):
 
     return f"/covers/{filename}"
 
+
+
+def ensure_song_cover(song: dict):
+    """Generate a missing album cover once a song has completed."""
+    if not song or song.get("status") != "completed" or song.get("cover_url"):
+        return song
+
+    if not os.getenv("HF_TOKEN"):
+        logger.warning(
+            "HF_TOKEN não configurado; não foi possível gerar capa para a música %s.",
+            song.get("id")
+        )
+        return song
+
+    try:
+        generation_data = json.loads(song.get("generation_json") or "{}")
+        if not isinstance(generation_data, dict):
+            generation_data = {}
+    except (TypeError, ValueError):
+        generation_data = {}
+
+    # Retry after 10 minutes if the image provider had a temporary failure.
+    last_attempt = float(generation_data.get("cover_generation_attempted_at") or 0)
+    if last_attempt and time.time() - last_attempt < 600:
+        return song
+
+    generation_data["cover_generation_attempted_at"] = time.time()
+    update_song(
+        song_id=int(song["id"]),
+        generation_json=json.dumps(generation_data)
+    )
+
+    title = str(song.get("title") or "StudioMusic.AI")
+    prompt = str(song.get("prompt") or song.get("style") or "African music")
+    try:
+        cover_url = generate_music_cover(title, prompt)
+    except Exception:
+        logger.exception("Falha ao gerar capa para a música %s.", song.get("id"))
+        return get_song(int(song["id"]))
+
+    if cover_url:
+        update_song(
+            song_id=int(song["id"]),
+            cover_url=cover_url,
+            generation_json=json.dumps(generation_data)
+        )
+    return get_song(int(song["id"]))
+
 # ============================================================
 # 4.VARIÁVEIS DE AMBIENTE
 # ============================================================
@@ -2123,6 +2171,8 @@ def get_music_generation_status(song_id: int, user=Depends(get_current_user)):
     if not song or (song.get("user_id") != user["id"] and not user.get("is_admin")):
         raise HTTPException(status_code=404, detail="Geração não encontrada.")
     if song.get("status") in {"completed", "failed"} or not song.get("task_id"):
+        if song.get("status") == "completed" and not song.get("cover_url"):
+            song = ensure_song_cover(song)
         return serialize_song(song, user=user)
 
     try:
@@ -2154,7 +2204,10 @@ def get_music_generation_status(song_id: int, user=Depends(get_current_user)):
 
     if state in {"succeeded", "success", "complete", "completed"}:
         if audio_url:
-            changes.update(status="completed", audio_url=audio_url, cover_url=cover_url)
+            changes.update(status="completed", audio_url=audio_url)
+            # Preserve any cover already saved; provider cover is preferred.
+            if cover_url:
+                changes["cover_url"] = cover_url
         else:
             state = "processing"
     elif state in {"failed", "error", "timeouted", "cancelled", "canceled"}:
@@ -2169,6 +2222,8 @@ def get_music_generation_status(song_id: int, user=Depends(get_current_user)):
 
     update_song(song_id=song_id, **changes)
     refreshed = get_song(song_id)
+    if refreshed and refreshed.get("status") == "completed" and not refreshed.get("cover_url"):
+        refreshed = ensure_song_cover(refreshed)
     serialized = serialize_song(refreshed, user=user)
     serialized["clips"] = choices
     serialized["generation_status"] = state
