@@ -1834,3 +1834,33 @@ textarea:focus-visible {
     line-height: 1.4;
     overflow-wrap: anywhere;
 }
+
+
+/* Resumo dos planos comerciais */
+.admin-plans-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+}
+.admin-plan-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--border-color, rgba(128,128,128,.2));
+    border-radius: 12px;
+    background: var(--card-bg, transparent);
+}
+.admin-plan-item div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.admin-plan-item span {
+    font-size: .88rem;
+    opacity: .75;
+}
+.admin-plan-item > strong {
+    white-space: nowrap;
+}
