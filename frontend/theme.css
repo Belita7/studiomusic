@@ -1,0 +1,85 @@
+/* StudioMusic.AI — identidade visual partilhada
+   Paleta alinhada com login.css: carvão, superfícies escuras e laranja. */
+:root {
+  --sm-bg: #090b10;
+  --sm-bg-soft: #10101b;
+  --sm-surface: #12121d;
+  --sm-surface-2: #1b1b29;
+  --sm-border: rgba(255,255,255,.09);
+  --sm-text: #fff;
+  --sm-muted: #a7adb8;
+  --sm-accent: #ff6b00;
+  --sm-accent-hover: #ff8126;
+  --sm-accent-soft: rgba(255,107,0,.12);
+  --bg-primary: var(--sm-bg);
+  --bg-secondary: var(--sm-bg-soft);
+  --card-bg: var(--sm-surface);
+  --border: var(--sm-border);
+  --text-primary: var(--sm-text);
+  --text-secondary: var(--sm-muted);
+  --text-muted: var(--sm-muted);
+  --accent: var(--sm-accent);
+  --accent-hover: var(--sm-accent-hover);
+  --primary: var(--sm-accent);
+  --primary-hover: var(--sm-accent-hover);
+  --background: var(--sm-bg);
+  --card: var(--sm-surface);
+  --input: var(--sm-bg-soft);
+  --payment-background: var(--sm-bg);
+  --payment-card: var(--sm-surface);
+  --payment-border: var(--sm-border);
+  --profile-bg: var(--sm-bg);
+  --profile-card: var(--sm-surface);
+  --profile-card-hover: var(--sm-surface-2);
+  --profile-primary: var(--sm-accent);
+  --profile-primary-hover: var(--sm-accent-hover);
+}
+html { color-scheme: dark; }
+body:not(.login-page) {
+  background:
+    radial-gradient(circle at top, rgba(255,107,0,.10), transparent 35%),
+    var(--sm-bg) !important;
+  color: var(--sm-text);
+}
+button, input, textarea, select { font-family: inherit; }
+a { transition: color .2s ease; }
+:where(.auth-card,.current-sub-box,.plan-card,.community-card,.community-search,
+       .payments-header,.current-subscription,.payment-card,.profile-card,
+       .admin-card,.stat-card,.modal-content,.settings-card) {
+  border-color: var(--sm-border);
+}
+:where(.auth-card,.current-sub-box,.plan-card,.community-card,.community-search,
+       .current-subscription,.payment-card,.profile-card,.admin-card,
+       .stat-card,.modal-content,.settings-card) {
+  background-color: var(--sm-surface);
+}
+:where(.auth-card,.current-sub-box,.plan-card,.community-card,.profile-card,
+       .admin-card,.stat-card,.modal-content,.settings-card) {
+  box-shadow: 0 12px 35px rgba(0,0,0,.18);
+}
+:where(.section-label,.small-label,.plan-price,.current-sub-box h3,
+       .brand-ai,.brand-icon,.logo-icon,.back-profile:hover) {
+  color: var(--sm-accent);
+}
+:where(input,textarea,select) {
+  color: var(--sm-text);
+  border-color: var(--sm-border);
+}
+:where(input,textarea,select):focus {
+  border-color: var(--sm-accent);
+  outline-color: rgba(255,107,0,.28);
+}
+:where(.auth-card,.auth-container) a:hover { color: var(--sm-accent-hover); }
+:where(.login-button,.share-button,.community-action-button.share-button,
+       .primary-button,.btn-primary,.submit-button,.payment-button) {
+  background: linear-gradient(100deg,#ff6b00,#ff8126);
+  border-color: #ff6b00;
+  color: #fff;
+}
+:where(.login-button,.share-button,.community-action-button.share-button,
+       .primary-button,.btn-primary,.submit-button,.payment-button):hover {
+  filter: brightness(1.08);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { transition-duration:.01ms !important; }
+}
