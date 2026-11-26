@@ -176,3 +176,44 @@
     line-height: 1.55;
     text-align: center;
 }
+
+
+/* Formato solicitado: valor principal em AOA e equivalente diário em USD */
+.plan-price-main {
+    margin: 0 0 0.2rem;
+    color: var(--accent);
+    line-height: 1.2;
+}
+
+.plan-price-main strong {
+    display: block;
+    font-size: clamp(1.8rem, 4vw, 2.25rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    overflow-wrap: anywhere;
+}
+
+.plan-price-usd {
+    margin: 0 0 0.35rem;
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.plan-duration {
+    margin: 0 0 1rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
+
+.exchange-rate-info {
+    margin: 0 0 1.25rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    text-align: center;
+}
