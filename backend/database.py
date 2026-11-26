@@ -167,6 +167,42 @@ def init_database():
             cur.execute(schema_path.read_text(encoding="utf-8"))
         # Compatibility with fields referenced by the existing Paddle/BitPay code.
         cur.execute("ALTER TABLE plans ADD COLUMN IF NOT EXISTS price_usd NUMERIC(12,2) NOT NULL DEFAULT 0")
+        # Integridade de pagamentos: hash do comprovativo e referência normalizada.
+        cur.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_proof_hash TEXT")
+        cur.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS transaction_reference_normalized TEXT")
+        cur.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS verification_source TEXT")
+        cur.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS verified_at TEXT")
+        cur.execute("""
+            UPDATE payments
+            SET transaction_reference_normalized =
+                UPPER(REGEXP_REPLACE(BTRIM(transaction_reference), '[^A-Za-z0-9]', '', 'g'))
+            WHERE transaction_reference IS NOT NULL
+              AND BTRIM(transaction_reference) <> ''
+              AND transaction_reference_normalized IS NULL
+              AND id IN (
+                  SELECT MIN(id) FROM payments
+                  WHERE transaction_reference IS NOT NULL AND BTRIM(transaction_reference) <> ''
+                  GROUP BY payment_provider,
+                    UPPER(REGEXP_REPLACE(BTRIM(transaction_reference), '[^A-Za-z0-9]', '', 'g'))
+                  HAVING COUNT(*) = 1
+              )
+        """)
+        cur.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_payments_proof_hash
+            ON payments(payment_proof_hash) WHERE payment_proof_hash IS NOT NULL
+        """)
+        cur.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_payments_provider_reference
+            ON payments(payment_provider, transaction_reference_normalized)
+            WHERE transaction_reference_normalized IS NOT NULL
+              AND payment_provider IS NOT NULL
+        """)
+        cur.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_payments_provider_transaction
+            ON payments(payment_provider, provider_transaction_id)
+            WHERE provider_transaction_id IS NOT NULL
+              AND payment_provider IS NOT NULL
+        """)
         for name, definition in {
             "billing_provider": "TEXT",
             "provider_subscription_id": "TEXT",
@@ -2213,13 +2249,14 @@ def create_payment(
                 payment_method,
                 payment_provider,
                 transaction_reference,
+                transaction_reference_normalized,
                 provider_transaction_id,
                 proof_file,
                 status,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, 'AOA', ?, ?, ?, ?, ?, 'pending', ?, ?)
+            VALUES (?, ?, ?, 'AOA', ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
         """, (
             user_id,
             plan_id,
@@ -2227,6 +2264,7 @@ def create_payment(
             payment_method,
             payment_provider,
             transaction_reference,
+            re.sub(r"[^A-Za-z0-9]", "", transaction_reference.strip()).upper() if transaction_reference else None,
             provider_transaction_id,
             proof_file,
             now,
@@ -2269,7 +2307,8 @@ def get_payment_by_id(payment_id: int):
 def update_payment_proof(
     payment_id: int,
     user_id: int,
-    proof_file: str
+    proof_file: str,
+    proof_hash: str
 ):
     """
     Guarda o caminho do comprovativo.
@@ -2290,6 +2329,7 @@ def update_payment_proof(
             UPDATE payments
             SET
                 proof_file = ?,
+                payment_proof_hash = ?,
                 updated_at = ?
             WHERE id = ?
               AND user_id = ?
@@ -2298,6 +2338,7 @@ def update_payment_proof(
               AND proof_file IS NULL
         """, (
             proof_file,
+            proof_hash,
             now,
             payment_id,
             user_id
@@ -2474,6 +2515,7 @@ def confirm_payment_and_activate_subscription(
 
             WHERE payments.id = ?
               AND payments.status = 'pending'
+            FOR UPDATE OF payments
         """, (payment_id,))
 
         payment = cursor.fetchone()
@@ -2526,6 +2568,8 @@ def confirm_payment_and_activate_subscription(
                 admin_note = ?,
                 reviewed_at = ?,
                 confirmed_at = ?,
+                verification_source = ?,
+                verified_at = ?,
                 updated_at = ?
             WHERE id = ?
               AND status = 'pending'
@@ -2534,6 +2578,8 @@ def confirm_payment_and_activate_subscription(
             reviewed_by,
             admin_note,
             now_text,
+            now_text,
+            "provider_webhook" if not reviewed_by else "admin_manual",
             now_text,
             now_text,
             payment_id,
