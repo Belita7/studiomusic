@@ -2146,3 +2146,165 @@ select option {
 .pay-table td,.pay-table th{padding:10px;border-bottom:1px solid var(--border-light);text-align:left;vertical-align:top}
 .pay-table button{margin:3px}
 .pay-proof-input{max-width:230px}
+
+
+/* ============================================================
+   MELHORIA VISUAL — UPLOADS DE ÁUDIO E GERAÇÃO
+   ============================================================ */
+.audio-uploads-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    width: 100%;
+    margin: 22px 0 18px;
+    align-items: stretch;
+}
+
+.audio-upload-card,
+.voice-upload-section {
+    min-width: 0;
+    width: 100%;
+    padding: 20px;
+    margin: 0 0 18px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 14px;
+    background: #12121d;
+}
+
+.audio-upload-card > label,
+.voice-upload-section > label {
+    display: block;
+    margin-bottom: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.audio-upload-card .field-help,
+.voice-upload-section .field-help {
+    margin: 0 0 14px;
+    color: #a7adb8;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.audio-upload-card input[type="file"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 10px;
+    border: 1px dashed #41414e;
+    border-radius: 10px;
+    background: #0c0f15;
+    color: #c7cbd3;
+    font-size: 12px;
+}
+
+.audio-upload-card input[type="file"]::file-selector-button {
+    margin-right: 10px;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: #292d38;
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.audio-upload-card input[type="file"]::file-selector-button:hover {
+    background: #383e4b;
+}
+
+.audio-authorization {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-top: 14px;
+    color: #a7adb8;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.audio-authorization input {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    margin: 1px 0 0;
+    accent-color: #ff6b00;
+}
+
+.audio-authorization label {
+    margin: 0;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.voice-upload-section .voice-upload-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.voice-audio-info {
+    width: 100%;
+    min-width: 0;
+    margin-top: 12px;
+}
+
+.voice-file-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: #d5d8df;
+    overflow-wrap: anywhere;
+}
+
+.voice-file-details .material-icons {
+    color: #ff6b00;
+}
+
+.voice-audio-info audio {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0;
+}
+
+.generate-area {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.generate-button {
+    min-width: 220px;
+    min-height: 58px;
+    border-radius: 12px;
+    box-shadow: 0 8px 22px rgba(255,107,0,.18);
+}
+
+@media (max-width: 680px) {
+    .audio-uploads-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+        margin: 16px 0;
+    }
+    .audio-upload-card,
+    .voice-upload-section {
+        padding: 16px;
+    }
+    .generate-area {
+        justify-content: stretch;
+    }
+    .generate-button {
+        width: 100%;
+        min-width: 0;
+    }
+}
