@@ -398,7 +398,6 @@ JWT_SECRET_KEY = os.getenv(
 ).strip()
 
 if not JWT_SECRET_KEY:
-
     if APP_ENV == "production":
         raise RuntimeError(
             "ERRO DE SEGURANÇA: "
@@ -797,8 +796,7 @@ def create_access_token(
 
         "exp": now + timedelta(
             days=JWT_EXPIRE_DAYS
-        )
-    }
+        )    }
 
     return jwt.encode(
         payload,
@@ -1198,7 +1196,6 @@ def serialize_song(
                 user
             )
         )
-
         admin = (
             user
             and
@@ -1597,8 +1594,7 @@ def auth_me(
 # ============================================================
 
 @app.patch("/auth/me")
-def update_my_profile(
-    data: UpdateProfileRequest,
+def update_my_profile(    data: UpdateProfileRequest,
     user=Depends(get_current_user)
 ):
 
@@ -1997,8 +1993,7 @@ def generate_music(data: GenerateMusicRequest, user=Depends(get_current_user)):
     reference_id = (data.source_reference_id or "").strip()
     if data.source_url and not reference_id:
         raise HTTPException(status_code=400, detail="O áudio precisa de ser enviado primeiro para /api/music/upload-source.")
-    if not (prompt or lyrics):
-        raise HTTPException(status_code=400, detail="Indique uma descrição ou forneça a letra da música.")
+    if not (prompt or lyrics):        raise HTTPException(status_code=400, detail="Indique uma descrição ou forneça a letra da música.")
     if len(prompt) > 1024 or len(style) > 1024:
         raise HTTPException(status_code=400, detail="A descrição musical da Mureka não pode ultrapassar 1024 caracteres.")
     if data.vocal_gender not in {None, "m", "f", "male", "female"}:
@@ -2398,7 +2393,6 @@ def unfavorite_music(
 # ============================================================
 # HISTÓRICO
 # ============================================================
-
 @app.post(
     "/api/music/{song_id}/history"
 )
@@ -2797,8 +2791,7 @@ def unpublish_song(
         user
     )
 
-    set_song_public(
-        song_id,
+    set_song_public(        song_id,
         False
     )
 
@@ -3197,8 +3190,7 @@ def create_paddle_checkout(
 
         raise HTTPException(
             status_code=500,
-            detail="Não foi possível iniciar o pagamento."
-        )
+            detail="Não foi possível iniciar o pagamento."        )
 
     return {
         "success": True,
@@ -3598,7 +3590,6 @@ def verify_paddle_signature(
             + b":"
             + raw_body
         )
-
         expected_signature = hmac.new(
             PADDLE_WEBHOOK_SECRET.encode("utf-8"),
             signed_payload,
@@ -3997,8 +3988,7 @@ def create_bitpay_checkout(
         raise HTTPException(
             status_code=502,
             detail=(
-                "Sem resposta do BitPay. O pagamento local "
-                "permanece pendente para evitar duplicação."
+                "Sem resposta do BitPay. O pagamento local "                "permanece pendente para evitar duplicação."
             )
         )
 
@@ -4397,7 +4387,6 @@ def view_payment_proof(
             status_code=403,
             detail="Acesso não autorizado."
         )
-
     filename = payment.get("proof_file")
 
     if not filename:
@@ -4797,8 +4786,7 @@ def process_paddle_transaction(
                 subscription_id,
                 amount,
                 currency,
-                payment_method,
-                payment_provider,
+                payment_method,                payment_provider,
                 transaction_reference,
                 provider_transaction_id,
                 status,
@@ -5197,8 +5185,7 @@ async def paddle_webhook(
 
                 process_paddle_transaction(
                     connection,
-                    data
-                )
+                    data                )
 
             # ------------------------------------------------
             # EVENTOS DE ASSINATURA
@@ -5597,7 +5584,6 @@ def process_bitpay_event(event):
     
     return
 
-
 # ============================================================
 # BITPAY — WEBHOOK PRINCIPAL
 # ============================================================
@@ -5780,6 +5766,9 @@ async def bitpay_webhook(
             status_code=500,
             detail="Erro ao processar notificação BitPay."
         )
+
+from password_reset import router as password_reset_router
+app.include_router(password_reset_router)
 
 #=============================================================
 # FRONTEND
