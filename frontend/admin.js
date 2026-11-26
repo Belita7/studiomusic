@@ -366,6 +366,7 @@ function modal({
     message,
     confirmText = "Confirmar",
     note = false,
+    requireNote = false,
     danger = false
 }) {
     return new Promise(resolve => {
@@ -391,6 +392,11 @@ function modal({
 
         $("noteLabel")?.classList.toggle("hidden", !note);
         $("adminNote")?.classList.toggle("hidden", !note);
+        if ($("noteLabel")) {
+            $("noteLabel").textContent = requireNote
+                ? "Nota de auditoria obrigatória (confirmação no extracto/conta)"
+                : "Nota administrativa (opcional)";
+        }
 
         if ($("adminNote")) {
             $("adminNote").value = "";
@@ -420,7 +426,15 @@ function modal({
             );
         };
 
-        const onYes = () => finish(true);
+        const onYes = () => {
+            const noteText = $("adminNote")?.value.trim() || "";
+            if (requireNote && noteText.length < 8) {
+                toast("Escreve uma nota de auditoria com pelo menos 8 caracteres.", true);
+                $("adminNote")?.focus();
+                return;
+            }
+            finish(true);
+        };
         const onNo = () => finish(false);
 
         const onBackdrop = event => {
@@ -1485,7 +1499,8 @@ async function handleAction(name, id) {
 
             confirmText: confirm ? "Confirmar" : "Rejeitar",
             danger: !confirm,
-            note: true
+            note: true,
+            requireNote: confirm
         };
 
         path = `/api/admin/payments/${id}/review`;
