@@ -1914,6 +1914,7 @@ async def update_my_profile_photo(
     file: UploadFile = File(...),
     user=Depends(get_current_user)
 ):
+    """Envia a fotografia para Cloudinary e guarda apenas o URL no PostgreSQL."""
 
     allowed_types = {
         "image/jpeg": ".jpg",
@@ -1921,10 +1922,7 @@ async def update_my_profile_photo(
         "image/webp": ".webp"
     }
 
-    extension = allowed_types.get(
-        file.content_type
-    )
-
+    extension = allowed_types.get(file.content_type)
     if not extension:
         raise HTTPException(
             status_code=400,
@@ -1932,7 +1930,6 @@ async def update_my_profile_photo(
         )
 
     content = await file.read()
-
     max_size = 5 * 1024 * 1024
 
     if not content:
@@ -1947,11 +1944,9 @@ async def update_my_profile_photo(
             detail="A fotografia não pode ultrapassar 5 MB."
         )
 
-    # Confirmar a assinatura do ficheiro,
-    # em vez de confiar apenas no tipo declarado.
     valid_signatures = {
-        ".jpg": content.startswith(b"\xff\xd8\xff"),
-        ".png": content.startswith(b"\x89PNG\r\n\x1a\n"),
+        ".jpg": content.startswith(b"\\xff\\xd8\\xff"),
+        ".png": content.startswith(b"\\x89PNG\\r\\n\\x1a\\n"),
         ".webp": (
             len(content) >= 12
             and content[:4] == b"RIFF"
@@ -1965,18 +1960,61 @@ async def update_my_profile_photo(
             detail="O conteúdo do ficheiro não corresponde a uma imagem válida."
         )
 
-    filename = (
-        f"{user['id']}_{uuid.uuid4().hex}{extension}"
-    )
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "").strip()
+    api_key = os.getenv("CLOUDINARY_API_KEY", "").strip()
+    api_secret = os.getenv("CLOUDINARY_API_SECRET", "").strip()
 
-    file_path = AVATARS_DIR / filename
+    if not all((cloud_name, api_key, api_secret)):
+        logger.error("Cloudinary não está completamente configurado no ambiente.")
+        raise HTTPException(
+            status_code=503,
+            detail="O serviço de imagens não está configurado. Contacta o suporte."
+        )
+
+    timestamp = int(time.time())
+    folder = "studiomusic/profiles"
+    signature_payload = f"folder={folder}&timestamp={timestamp}{api_secret}"
+    signature = hashlib.sha1(signature_payload.encode("utf-8")).hexdigest()
+    filename = f"profile_{user['id']}{extension}"
 
     try:
+        upload_response = requests.post(
+            f"https://api.cloudinary.com/v1_1/{cloud_name}/image/upload",
+            data={
+                "api_key": api_key,
+                "timestamp": timestamp,
+                "folder": folder,
+                "signature": signature
+            },
+            files={
+                "file": (filename, content, file.content_type)
+            },
+            timeout=45
+        )
 
-        with open(file_path, "wb") as image_file:
-            image_file.write(content)
+        try:
+            cloud_result = upload_response.json()
+        except ValueError:
+            cloud_result = {}
 
-        photo_url = f"/avatars/{filename}"
+        if upload_response.status_code not in (200, 201):
+            logger.error(
+                "Cloudinary rejeitou o upload do avatar: HTTP %s - %s",
+                upload_response.status_code,
+                cloud_result.get("error", {}).get("message", "resposta inválida")
+            )
+            raise HTTPException(
+                status_code=502,
+                detail="Não foi possível enviar a fotografia para o serviço de imagens."
+            )
+
+        photo_url = cloud_result.get("secure_url")
+        if not photo_url or not photo_url.startswith("https://"):
+            logger.error("Cloudinary não devolveu um secure_url válido para o avatar.")
+            raise HTTPException(
+                status_code=502,
+                detail="O serviço de imagens não devolveu um endereço válido."
+            )
 
         updated_user = update_user_photo(
             user_id=user["id"],
@@ -1984,8 +2022,6 @@ async def update_my_profile_photo(
         )
 
         if not updated_user:
-            file_path.unlink(missing_ok=True)
-
             raise HTTPException(
                 status_code=404,
                 detail="Utilizador não encontrado."
@@ -2006,19 +2042,21 @@ async def update_my_profile_photo(
 
     except HTTPException:
         raise
-
+    except requests.RequestException:
+        logger.exception("Falha de comunicação com o Cloudinary ao carregar avatar.")
+        raise HTTPException(
+            status_code=502,
+            detail="Não foi possível contactar o serviço de imagens. Tenta novamente."
+        )
     except Exception:
-        if file_path.exists():
-            file_path.unlink(missing_ok=True)
-
+        logger.exception("Erro inesperado ao guardar a fotografia do perfil.")
         raise HTTPException(
             status_code=500,
             detail="Não foi possível guardar a fotografia."
         )
-
     finally:
         await file.close()
-        
+
 # ============================================================
 # GERAR MÚSICA
 # ============================================================
